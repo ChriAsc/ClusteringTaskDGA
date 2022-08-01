@@ -7,6 +7,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql import SQLContext
 from pyspark.sql.types import *
 from getNGrams import getNGrams
+from datasetWriter import dataset_writer
 
 # se è gia esistente prende lo SparkContext, oppure lo crea
 sc = SparkContext.getOrCreate()
@@ -62,6 +63,7 @@ balanced_v2 = balanced_v2.union(dga_dataset_random)
 balanced_v2 = balanced_v2.union(to_append.sample(0.15).limit(dga_dataset_random.count()))
 final_balanced_v1 = getNGrams(balanced_v1)
 final_balanced_v2 = getNGrams(balanced_v2)
-
+headers = final_balanced_v2.schema.names
 # writing two datasets to two different csv files
-"""TODO"""
+dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/twoClassFullyBalanced.csv", final_balanced_v1, headers)
+dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/twoClassBalanced.csv", final_balanced_v2, headers)

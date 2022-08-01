@@ -3,6 +3,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql import SQLContext
 from pyspark.sql.types import *
 import os
+from datasetWriter import dataset_writer
 
 # se è gia esistente prende lo SparkContext, oppure lo crea
 sc = SparkContext.getOrCreate()
@@ -37,10 +38,6 @@ for file in files:
         df = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(f"{path}/{file}")
         legit_feed = legit_feed.union(df).dropDuplicates(["Domain"])
         # to_append_2 = legit_feed.union(df).groupBy("Domain").count()
-with open(f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/legitFeed.csv", 'w') as filehandle:
-    filehandle.write(f"GlobalRank,TldRank,Domain,TLD,RefSubNets,RefIPs,IDN_Domain,IDN_TLD,PrevGlobalRank,PrevTldRank,PrevRefSubNets,PrevRefIPs\n")
-    for riga in legit_feed.collect():
-        row = ""
-        for i in range(12):
-            row += f"{riga[i]}," if i != 11 else f"{riga[i]}\n"
-        filehandle.write(row)
+
+dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/legitFeed.csv", legit_feed, legit_feed.schema.names)
+
