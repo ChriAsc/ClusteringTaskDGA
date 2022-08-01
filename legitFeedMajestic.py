@@ -33,9 +33,9 @@ legit_feed = spark.createDataFrame([],schema)
 files = os.listdir(path)
 for file in files:
     if files.index(file) == 0:
-        legit_feed = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(f"{path}/{file}")
+        legit_feed = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(f"{path}/{file}", schema=schema)
     else:
-        df = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(f"{path}/{file}")
+        df = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(f"{path}/{file}", schema=schema)
         legit_feed = legit_feed.union(df).dropDuplicates(["Domain"])
         # to_append_2 = legit_feed.union(df).groupBy("Domain").count()
 
