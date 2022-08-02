@@ -2,7 +2,7 @@ import os
 import gzip
 
 from pyspark.context import SparkContext
-from pyspark.sql.functions import lit, concat_ws, split
+from pyspark.sql.functions import lit, concat_ws, split, when, col
 from pyspark.sql.session import SparkSession
 from pyspark.sql import SQLContext
 from pyspark.sql.types import *
@@ -27,5 +27,14 @@ schema = StructType([
 evil_feed = spark.createDataFrame([],schema)
 for feed in bambenek_feeds:
     df = spark.read.format('csv').load(f"{os.environ['HOME']}/Desktop/progettoBDA/DGAFeed/{feed}", schema=schema)
-    evil_feed = evil_feed.union(df.filter(df['description'].isNotNull())).dropDuplicates()
-evil_feed.show(50)
+    evil_feed = evil_feed.union(df.filter(df['description'].isNotNull()))
+evil_feed = evil_feed.withColumn("family", split(evil_feed['link'], '[/.]')[6])
+evil_feed = evil_feed.withColumn("family", when(col('family') == 'cl', 'cryptolocker')
+                                 .when(col('family') == 'wiki25', 'cryptolocker')
+                                 .when(col('family') == 'bebloh', 'shiotob')
+                                 .when(col('family') == 'ptgoz', 'zeus-newgoz').otherwise(col('family')))
+evil_feed = evil_feed.dropDuplicates(['domain', 'family'])
+studio = sqlContext.sql("SELECT domain, concat(first(family), ' ' ,last(family)) as sovrapposizioni, COUNT(domain) FROM evil_feed GROUP BY domain HAVING COUNT(domain) >= 2")
+studio.createOrReplaceTempView('studio')
+sovrapposizioni = sqlContext.sql("SELECT sovrapposizioni, COUNT(sovrapposizioni) FROM studio GROUP BY sovrapposizioni")
+sovrapposizioni.show(50)
