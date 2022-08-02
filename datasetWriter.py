@@ -1,9 +1,8 @@
 import json
 
 
-
-def dataset_writer(path, dataset, header):
-    with open(path, 'a') as filehandle:
+def dataset_writer(path, dataset, header, mode='a'):
+    with open(path, mode) as filehandle:
         filehandle.write(",".join(header) + "\n")
         for domain in dataset.collect():
             row = ""

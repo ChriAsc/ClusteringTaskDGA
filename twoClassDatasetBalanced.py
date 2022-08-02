@@ -65,5 +65,5 @@ final_balanced_v1 = getNGrams(balanced_v1)
 final_balanced_v2 = getNGrams(balanced_v2)
 headers = final_balanced_v2.schema.names
 # writing two datasets to two different csv files
-dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/twoClassFullyBalanced.csv", final_balanced_v1, headers)
-dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/twoClassBalanced.csv", final_balanced_v2, headers)
+dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/twoClassFullyBalanced.csv", final_balanced_v1, headers, mode='w')
+dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/twoClassBalanced.csv", final_balanced_v2, headers, mode='w')

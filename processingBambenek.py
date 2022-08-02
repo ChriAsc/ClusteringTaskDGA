@@ -1,5 +1,4 @@
 import os
-import gzip
 from datetime import date
 
 from pyspark.context import SparkContext
@@ -8,12 +7,11 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql import SQLContext
 from pyspark.sql.types import *
 import datasetWriter
-from getNGrams import getNGrams
-from datasetWriter import dataset_writer
+from getFamilies import get_families_distribution
 
 # se è gia esistente prende lo SparkContext, oppure lo crea
 sc = SparkContext.getOrCreate()
-# crea una sesione nello spark Context in quanto ci possono essere più session
+# crea una sessione nello spark Context in quanto ci possono essere più session
 spark = SparkSession(sc)
 
 sqlContext = SQLContext(sc)
@@ -64,6 +62,7 @@ new_metadata = {"written": date.today().strftime("%Y-%m-%d"),
                 "num_domains": metadata['num_domains']+evil_feed.count() if metadata else evil_feed.count()}
 datasetWriter.metadata_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/bambenekFeedMetadata.json", new_metadata)
 
+family_distribution = get_families_distribution(spark, sqlContext, f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/bambenekFeed.csv")
 
 """studio = sqlContext.sql("SELECT domain, concat(first(family), ' ' ,last(family)) as sovrapposizioni, COUNT(domain) FROM evil_feed GROUP BY domain HAVING COUNT(domain) >= 2")
 studio.createOrReplaceTempView('studio')
