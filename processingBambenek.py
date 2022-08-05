@@ -85,6 +85,10 @@ datasetWriter.metadata_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/ba
 family_distribution = get_families_distribution(spark, sqlContext,
                                                 f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/bambenekFeed.csv")
 
-"""studio = sqlContext.sql("SELECT domain, concat(first(family), ' ' ,last(family)) as sovrapposizioni, COUNT(domain) FROM evil_feed GROUP BY domain HAVING COUNT(domain) >= 2")
+"""
+ISTRUZIONI PER STUDIARE LE SOVRAPPOSIZIONI TRA I DOMINI DI ALCUNE FAMIGLIE
+old_feeds = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/bambenekFeed.csv")
+old_feeds.createOrReplaceTempView('evil_feed')
+studio = sqlContext.sql("SELECT domain, concat(first(family), ' ' ,last(family)) as sovrapposizioni, COUNT(domain) FROM evil_feed GROUP BY domain HAVING COUNT(domain) >= 2")
 studio.createOrReplaceTempView('studio')
 sovrapposizioni = sqlContext.sql("SELECT sovrapposizioni, COUNT(sovrapposizioni) FROM studio GROUP BY sovrapposizioni")"""
