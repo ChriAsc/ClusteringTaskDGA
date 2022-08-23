@@ -82,8 +82,7 @@ new_metadata = {"written": date.today().strftime("%Y-%m-%d"),
 datasetWriter.metadata_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/bambenekFeedMetadata.json",
                               new_metadata)
 # determinazione del numero di campioni per ogni famiglia rispetto al totale dei campioni
-family_distribution = get_families_distribution(spark, sqlContext,
-                                                f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/bambenekFeed.csv")
+family_distribution = get_families_distribution(spark, sqlContext, f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/bambenekFeed.csv")
 
 """
 ISTRUZIONI PER STUDIARE LE SOVRAPPOSIZIONI TRA I DOMINI DI ALCUNE FAMIGLIE

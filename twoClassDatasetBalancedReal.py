@@ -51,6 +51,7 @@ final_balanced_v2 = getNGrams(balanced)
 #dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/twoClassBalancedReal.csv",
 #               final_balanced_v2, mode='w')
 """
+family_distribution = get_families_distribution(spark, sqlContext, f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/bambenekFeed.csv")
 new_balanced = final_balanced_v2.filter(final_balanced_v2['class'] == 'dga')
 new_balanced.createOrReplaceTempView('domains')
 tot = new_balanced.count()
