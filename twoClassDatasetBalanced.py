@@ -28,7 +28,7 @@ balanced_v2 = spark.createDataFrame([], schema)
 dga_dataset = spark.createDataFrame([], schema)
 dga_dataset_balanced = spark.createDataFrame([], schema)
 
-path = f"{os.environ['HOME']}/Desktop/progettoBDA/FullyQualifiedDomains"
+path = f"{os.environ['HOME']}/progettoBDA/FullyQualifiedDomains"
 classes = os.listdir(path)
 changes = [fam for fam in classes if len(os.listdir(f"{path}/{fam}/list")) == 3]
 
