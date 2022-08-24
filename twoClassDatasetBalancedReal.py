@@ -26,7 +26,7 @@ schema = StructType([
 
 balanced = spark.createDataFrame([], schema)
 
-path = f"{os.environ['HOME']}/Desktop/progettoBDA/Feed"
+path = f"{os.environ['HOME']}/progettoBDA/Feed"
 
 legit_feed = spark.read.format("csv").option("header", "true").load(f"{path}/legitFeed.csv")
 legit_labelled_domains = legit_feed.withColumns({"class": lit("legit"), "family": lit("alexa"),
@@ -48,10 +48,10 @@ balanced = balanced.union(legit_dataset_sample).union(dga_dataset_sample)
 final_balanced_v2 = getNGrams(balanced)
 
 # writing dataset to two different csv files
-#dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/twoClassBalancedReal.csv",
+#dataset_writer(f"{os.environ['HOME']}/progettoBDA/datasets/twoClassBalancedReal.csv",
 #               final_balanced_v2, mode='w')
 """
-family_distribution = get_families_distribution(spark, sqlContext, f"{os.environ['HOME']}/Desktop/progettoBDA/Feed/bambenekFeed.csv")
+family_distribution = get_families_distribution(spark, sqlContext, f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFeed.csv")
 new_balanced = final_balanced_v2.filter(final_balanced_v2['class'] == 'dga')
 new_balanced.createOrReplaceTempView('domains')
 tot = new_balanced.count()

@@ -1,6 +1,4 @@
 import os
-import numpy as np
-
 from pyspark.context import SparkContext
 from pyspark.sql.functions import lit, concat_ws, split
 from pyspark.sql.session import SparkSession
@@ -23,12 +21,10 @@ schema = StructType([
     StructField("domain", StringType(), True),
 ])
 
-balanced_v1 = spark.createDataFrame([], schema)
-#balanced_v2 = spark.createDataFrame([], schema)
-#dga_dataset = spark.createDataFrame([], schema)
+imbalanced_legit = spark.createDataFrame([], schema)
 dga_dataset_balanced = spark.createDataFrame([], schema)
 
-path = "/home/simone/Scrivania/BDA/FullyQualifiedDomains"
+path = f"{os.environ['HOME']}/progettoBDA/FullyQualifiedDomains"
 classes = os.listdir(path)
 changes = [fam for fam in classes if len(os.listdir(f"{path}/{fam}/list")) == 3]
 
@@ -41,29 +37,17 @@ for family in classes:
             df = spark.read.format("text").load(f"{path}/{family}/list/50000.txt")
         labelled_domains = df.withColumns({"class": lit("dga"), "family": lit(family), "domain": df["value"]})
         to_append = labelled_domains.select("class", "family", concat_ws('', split("domain", '[.]')).alias("noDotsDomain"), "domain")
-        #dga_dataset = dga_dataset.union(to_append)
         dga_dataset_balanced = dga_dataset_balanced.union(to_append.limit(600))
-
-# using the dirichlet distribution to create an unbalanced dataframe with only DGA names
-#arr = np.random.dirichlet(np.ones(50))
-#fractions = dict(zip(classes, arr))
-#for k, v in fractions.items():
-#    if k in changes:
-#        fractions.update({k: v*5})
-#dga_dataset_random = dga_dataset.sampleBy("family", fractions)
-
+# creating a dataframe containing only legit domains
 df = spark.read.format("text").load(f"{path}/legit/list/1000000.txt")
 labelled_domains = df.withColumns({"class": lit("legit"), "family": lit("alexa"), "domain": df["value"]})
 to_append = labelled_domains.select("class", "family", concat_ws('', split("domain", '[.]')).alias("noDotsDomain"), "domain")
 
-# creating two versions of balanced datasets with unigrams, bigrams and trigrams
-balanced_v1 = balanced_v1.union(dga_dataset_balanced)
-balanced_v1 = balanced_v1.union(to_append.limit(70000))
-#balanced_v2 = balanced_v2.union(dga_dataset_random)
-#balanced_v2 = balanced_v2.union(to_append.sample(0.15).limit(dga_dataset_random.count()))
-final_balanced_v1 = getNGrams(balanced_v1)
-#final_balanced_v2 = getNGrams(balanced_v2)
+# creating two versions of imbalanced datasets with unigrams, bigrams and trigrams
+imbalanced_legit = imbalanced_legit.union(dga_dataset_balanced)
+imbalanced_legit = imbalanced_legit.union(to_append.limit(70000))
+final_imbalanced_ = getNGrams(imbalanced_legit)
 
-# writing two datasets to two different csv files
-dataset_writer("/home/simone/Scrivania/BDA/datasets/twoClassFullyBalanced.csv", final_balanced_v1, mode='w')
-#dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/twoClassBalanced.csv", final_balanced_v2, mode='w')
+# writing dataset to  csv file
+dataset_writer(f"{os.environ['HOME']}/Scrivania/BDA/datasets/twoClassFullyBalanced.csv",
+               final_imbalanced_, mode='w')

@@ -23,7 +23,7 @@ schema = StructType([
 ])
 
 multi_balanced = spark.createDataFrame([], schema)
-path = f"{os.environ['HOME']}/Desktop/progettoBDA/FullyQualifiedDomains"
+path = f"{os.environ['HOME']}/progettoBDA/FullyQualifiedDomains"
 classes = os.listdir(path)
 changes = [fam for fam in classes if len(os.listdir(f"{path}/{fam}/list")) == 3]
 
@@ -41,5 +41,5 @@ for family in classes:
 final_multi_balanced = getNGrams(multi_balanced)
 final_multi_balanced.groupBy("family").count().show(51)
 # writing two datasets to two different csv files
-# dataset_writer(f"{os.environ['HOME']}/Desktop/progettoBDA/datasets/multiClassBalanced.csv",
+# dataset_writer(f"{os.environ['HOME']}/progettoBDA/datasets/multiClassBalanced.csv",
 #               final_multi_balanced, mode='w')
