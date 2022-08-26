@@ -45,7 +45,8 @@ dga_dataset = dga_labelled_domains.select("class", "family",
 # 30% of dataset consists of DGA feed (with its relative distribution)
 dga_dataset_sample = dga_dataset.sample(30000/dga_feed.count())
 # 70% of it is made by legit (100000 ca)
-legit_dataset_sample = legit_dataset.sample(0.08).limit(int(dga_dataset_sample.count()*2.5))   # or 2 (90000 ca) or 3 (115000ca)
+alexa_count = int(round((dga_dataset_sample.count()/30)*70, 0))
+legit_dataset_sample = legit_dataset.sample(0.08).limit(alexa_count)   # or 2 (90000 ca) or 3 (115000ca)
 
 imbalanced = imbalanced.union(legit_dataset_sample).union(dga_dataset_sample)
 final_imbalanced_v2 = getNGrams(imbalanced)
