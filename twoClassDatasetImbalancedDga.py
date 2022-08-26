@@ -29,48 +29,46 @@ dga_dataset_balanced = spark.createDataFrame([], schema)
 
 path = f"{os.environ['HOME']}/progettoBDA/FullyQualifiedDomains"
 classes = os.listdir(path)
-changes = [fam for fam in classes if len(
-    os.listdir(f"{path}/{fam}/list")) == 3]
+classes.sort()
+classes.remove('legit')
+changes = [fam for fam in classes if len(os.listdir(f"{path}/{fam}/list")) == 3]
+changes_2 = [fam for fam in classes if len(os.listdir(f"{path}/{fam}/list")) == 4]
 
 # creating a balanced dataset of DGA domain names
 for family in classes:
-    if family != "legit":
-        if family in changes:
-            df = spark.read.format("text").load(
-                f"{path}/{family}/list/10000.txt")
-        else:
-            df = spark.read.format("text").load(
-                f"{path}/{family}/list/50000.txt")
-        labelled_domains = df.withColumns(
-            {"class": lit("dga"), "family": lit(family), "domain": df["value"]})
-        to_append = labelled_domains.select("class", "family", concat_ws(
-            '', split("domain", '[.]')).alias("noDotsDomain"), "domain")
-        dga_dataset = dga_dataset.union(to_append.limit(70000))
-        dga_dataset_balanced = dga_dataset_balanced.union(
-            to_append.limit(1400))
+    if family in changes:
+        df = spark.read.format("text").load(f"{path}/{family}/list/10000.txt")
+    elif family in changes_2:
+        df = spark.read.format("text").load(f"{path}/{family}/list/50000.txt")
+    else:
+        df = spark.read.format("text").load(f"{path}/{family}/list/100000.txt")
+    labelled_domains = df.withColumns({"class": lit("dga"), "family": lit(family), "domain": df["value"]})
+    to_append = labelled_domains.select("class", "family",
+                                        concat_ws('', split("domain", '[.]')).alias("noDotsDomain"), "domain")
+    dga_dataset = dga_dataset.union(to_append.limit(70000))
+    dga_dataset_balanced = dga_dataset_balanced.union(to_append.limit(1400))
 
 # using the dirichlet distribution to create an unbalanced dataframe with only DGA names
 arr = np.random.dirichlet(np.ones(50))
 fractions = dict(zip(classes, arr))
 for k, v in fractions.items():
     if k in changes:
-        fractions.update({k: v*3})
+        fractions.update({k: v*7})
+    if k in changes_2:
+        fractions.update({k: v*(7/5)})
 dga_dataset_random = dga_dataset.sampleBy("family", fractions)
 
 # creating a dataframe containing only legit domains
 df = spark.read.format("text").load(f"{path}/legit/list/500000.txt")
-labelled_domains = df.withColumns(
-    {"class": lit("legit"), "family": lit("alexa"), "domain": df["value"]})
-to_append = labelled_domains.select("class", "family", concat_ws(
-    '', split("domain", '[.]')).alias("noDotsDomain"), "domain")
+labelled_domains = df.withColumns({"class": lit("legit"), "family": lit("alexa"), "domain": df["value"]})
+to_append = labelled_domains.select("class", "family", concat_ws('', split("domain", '[.]')).alias("noDotsDomain"), "domain")
 
 # creating two versions of imbalanced datasets with unigrams, bigrams and trigrams
 imbalanced_dga_v1 = imbalanced_dga_v1.union(dga_dataset_balanced)
 imbalanced_dga_v1 = imbalanced_dga_v1.union(to_append.limit(30000))
 imbalanced_dga_v2 = imbalanced_dga_v2.union(dga_dataset_random)
-alexa_count = int(round((dga_dataset_random.count()/30)*70, 0))
-imbalanced_dga_v2 = imbalanced_dga_v2.union(
-    to_append.sample(0.15).limit(alexa_count))
+alexa_count = int(round((dga_dataset_random.count()/70)*30, 0))
+imbalanced_dga_v2 = imbalanced_dga_v2.union(to_append.sample(0.15).limit(alexa_count))
 final_imbalanced_v1 = getNGrams(imbalanced_dga_v1)
 final_imbalanced_v2 = getNGrams(imbalanced_dga_v2)
 

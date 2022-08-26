@@ -30,19 +30,20 @@ dga_dataset_balanced = spark.createDataFrame([], schema)
 
 path = f"{os.environ['HOME']}/progettoBDA/FullyQualifiedDomains"
 classes = os.listdir(path)
+classes.sort()
+classes.remove('legit')
 changes = [fam for fam in classes if len(os.listdir(f"{path}/{fam}/list")) == 3]
 
 # creating a balanced dataset of DGA domain names
 for family in classes:
-    if family != "legit":
-        if family in changes:
-            df = spark.read.format("text").load(f"{path}/{family}/list/10000.txt")
-        else:
-            df = spark.read.format("text").load(f"{path}/{family}/list/50000.txt")
-        labelled_domains = df.withColumns({"class": lit("dga"), "family": lit(family), "domain": df["value"]})
-        to_append = labelled_domains.select("class", "family", concat_ws('', split("domain", '[.]')).alias("noDotsDomain"), "domain")
-        dga_dataset = dga_dataset.union(to_append)
-        dga_dataset_balanced = dga_dataset_balanced.union(to_append.limit(1000))
+    if family in changes:
+        df = spark.read.format("text").load(f"{path}/{family}/list/10000.txt")
+    else:
+        df = spark.read.format("text").load(f"{path}/{family}/list/50000.txt")
+    labelled_domains = df.withColumns({"class": lit("dga"), "family": lit(family), "domain": df["value"]})
+    to_append = labelled_domains.select("class", "family", concat_ws('', split("domain", '[.]')).alias("noDotsDomain"), "domain")
+    dga_dataset = dga_dataset.union(to_append)
+    dga_dataset_balanced = dga_dataset_balanced.union(to_append.limit(1000))
 
 # using the dirichlet distribution to create an unbalanced dataframe with only DGA names
 arr = np.random.dirichlet(np.ones(50))
@@ -65,5 +66,7 @@ final_balanced_v1 = getNGrams(balanced_v1)
 final_balanced_v2 = getNGrams(balanced_v2)
 
 # writing two datasets to two different csv files
-dataset_writer(f"{os.environ['HOME']}/progettoBDA/datasets/twoClassFullyBalanced.csv", final_balanced_v1, mode='w')
-dataset_writer(f"{os.environ['HOME']}/progettoBDA/datasets/twoClassBalanced.csv", final_balanced_v2, mode='w')
+#dataset_writer(f"{os.environ['HOME']}/progettoBDA/datasets/twoClassFullyBalanced.csv",
+# final_balanced_v1, mode='w')
+#dataset_writer(f"{os.environ['HOME']}/progettoBDA/datasets/twoClassBalanced.csv",
+# final_balanced_v2, mode='w')
