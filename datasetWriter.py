@@ -20,6 +20,10 @@ def dataset_writer(path: str, dataset: DataFrame, mode: str):
             filehandle.write(row)
 
 
+def dataset_writer_fasttext(base_path: str, dataset: DataFrame):
+    pass
+
+
 def metadata_writer(path: str, metadata: Dict):
     """
     Writes metadata associated with a feed into a .json file
