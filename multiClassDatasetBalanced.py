@@ -6,7 +6,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql import SQLContext
 from pyspark.sql.types import *
 from getNGrams import getNGrams
-from datasetWriter import dataset_writer
+from datasetWriter import dataset_writer, dataset_writer_fasttext
 
 # se è gia esistente prende lo SparkContext, oppure lo crea
 sc = SparkContext.getOrCreate()
@@ -43,3 +43,7 @@ final_multi_balanced.groupBy("family").count().show(51)
 # writing two datasets to two different csv files
 # dataset_writer(f"{os.environ['HOME']}/progettoBDA/datasets/multiClassBalanced.csv",
 #               final_multi_balanced, mode='w')
+
+#writing the dataset into three txt files to be used for the fasttext training
+dataset_writer_fasttext(f"{os.environ['HOME']}/progettoBDA/datasets/fasttext/UMU", 
+    final_multi_balanced)
