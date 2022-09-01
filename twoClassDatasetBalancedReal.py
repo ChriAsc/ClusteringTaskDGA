@@ -9,6 +9,7 @@ from pyspark.sql.types import *
 from getFamilies import get_families_distribution
 from getNGrams import getNGrams
 from datasetWriter import dataset_writer
+from datasetWriter import dataset_writer_fasttext
 
 # se è gia esistente prende lo SparkContext, oppure lo crea
 sc = SparkContext.getOrCreate()
@@ -50,6 +51,10 @@ final_balanced_v2 = getNGrams(balanced)
 # writing dataset to two different csv files
 #dataset_writer(f"{os.environ['HOME']}/progettoBDA/datasets/twoClassBalancedReal.csv",
 #               final_balanced_v2, mode='w')
+
+# writing three dataset txt used by fasttext
+dataset_writer_fasttext(f"{os.environ['HOME']}/progettoBDA/datasets/fasttext/Real", final_balanced_v2)
+
 """
 family_distribution = get_families_distribution(spark, sqlContext, f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFeed.csv")
 new_balanced = final_balanced_v2.filter(final_balanced_v2['class'] == 'dga')
