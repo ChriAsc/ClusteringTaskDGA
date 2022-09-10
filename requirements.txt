@@ -5,4 +5,3 @@ fasttext==0.9.2
 pandas==1.4.4
 scikit-learn==1.1.2
 kneed==0.8.1
-scipy==1.9.1

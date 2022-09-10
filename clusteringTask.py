@@ -4,7 +4,7 @@ import fasttext
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 from kneed import KneeLocator
-from scipy.spatial import distance_matrix
+#from scipy.spatial import distance_matrix
 
 basepath_train_data = ""
 
@@ -56,13 +56,15 @@ def run_fasttext_training(train_data_path, model_type, dim, epoch):
                          + "skipgram or cbow")
 
 
-# DA FINIRE
-def getDist(arr1, arr2):
-    pass
+def getDist(mat1, mat2):
+    return np.linalg.norm(mat1-mat2) 
 
 
 try:
     # NUMERI DA SCEGLIERE
+    dataset = pd.read_csv('dataset.csv')  # NOME TEMPORANEO?
+    domainNames = list(dataset['noDotsDomain'].to_numpy)
+    max_len = max(domainNames)
     for epoch in range(1, 11):
         for dim in range(100, 301):
             model_skipgram = run_fasttext_training(
@@ -70,23 +72,24 @@ try:
             dict_skipgram = getDict(model_skipgram)
             #model_cbow=run_fasttext_training(basepath_train_data, "cbow", dim, epoch)
             # dict_cbow=getDict(model_cbow)
-            dataset = pd.read_csv('dataset.csv')  # NOME TEMPORANEO?
-            domainNames = list(dataset['noDotsDomain'].to_numpy)
             embeddedDomainNames = []
             for name in domainNames:
-                embeddedDomainNames.append(
-                    [dict_skipgram[char] for char in name])
+                #embeddedDomainName = [dict_skipgram[char] for char in name].append([0 for i in range(len(name), max_len)])
+                embeddedDomainName = np.concatenate(
+                    np.array([dict_skipgram[char] for char in name]), np.zeros(dim, max_len-len(name)), axis=1)
+                embeddedDomainNames.append(embeddedDomainName)
             # SCELTA PARAMETRI DBSCAN
             # a rule of thumb is to derive minPts from the number of dimensions D in the data set. minPts >= D + 1.
             # For larger datasets, with much noise, it suggested to go with minPts = 2 * D.
             minPoints = dim+1
             # cerco eps adatto
             neigh = NearestNeighbors(
-                n_neighbors=minPoints, metric=distance_matrix).fit(embeddedDomainNames)
+                n_neighbors=minPoints, metric=getDist).fit(embeddedDomainNames)
             distances = neigh.kneighbors(embeddedDomainNames)[0].sort()
-            kneedle = KneeLocator(range(1, len(distances)+1),distances, S=1.0, curve='convex', direction='increasing')
-            eps=round(kneedle.knee_y,8)
-            #ESECUZIONE DBSCAN
+            kneedle = KneeLocator(range(
+                1, len(distances)+1), distances, S=1.0, curve='convex', direction='increasing')
+            eps = round(kneedle.knee_y, 8)
+            # ESECUZIONE DBSCAN
             # CONTROLLO PERFORMANCE RISPETTO AL PRECEDENTE RISULTATO MIGLIORE
 except ValueError:
     print("error")
