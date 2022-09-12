@@ -4,6 +4,7 @@ import fasttext
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 from kneed import KneeLocator
+from sklearn.metrics import homogeneity_score, completeness_score
 #from scipy.spatial import distance_matrix
 
 basepath_train_data = ""
@@ -64,6 +65,7 @@ try:
     # NUMERI DA SCEGLIERE
     dataset = pd.read_csv('dataset.csv')  # NOME TEMPORANEO?
     domainNames = list(dataset['noDotsDomain'].to_numpy)
+    labels_true = list(dataset["family"].to_numpy) #MI PARE SI CHIAMI FAMILY NON HO VOGLIA DI APRIRE LA VM PER CONTROLLARE
     max_len = max(domainNames)
     for epoch in range(1, 11):
         for dim in range(100, 301):
@@ -83,13 +85,25 @@ try:
             # For larger datasets, with much noise, it suggested to go with minPts = 2 * D.
             minPoints = dim+1
             # cerco eps adatto
-            neigh = NearestNeighbors(
+            nn: NearestNeighbors = NearestNeighbors(
                 n_neighbors=minPoints, metric=getDist).fit(embeddedDomainNames)
-            distances = neigh.kneighbors(embeddedDomainNames)[0].sort()
+            distances = nn.kneighbors(embeddedDomainNames)[0].sort()
             kneedle = KneeLocator(range(
                 1, len(distances)+1), distances, S=1.0, curve='convex', direction='increasing')
             eps = round(kneedle.knee_y, 8)
-            # ESECUZIONE DBSCAN
+            # ESECUZIONE DBSCAN 
+            #NELLA PAGINA DI SKLEARN DEL DBSCAN DICONO CHE PER RIDURRE LA COMPLESSITA': 
+            #"One way to avoid the query complexity is to pre-compute sparse neighborhoods in chunks using 
+            #NearestNeighbors.radius_neighbors_graph with mode='distance', then using metric='precomputed' here."
+            sparseMatrix=nn.radius_neighbors_graph(embeddedDomainNames, mode="distance")
+            #SE HO BEN CAPITO VA PASSATA LA MATRICE SOPRA SE PRECALCOLATA
+            db=DBSCAN(eps=eps, min_samples=minPoints, metric="precomputed").fit(sparseMatrix)
             # CONTROLLO PERFORMANCE RISPETTO AL PRECEDENTE RISULTATO MIGLIORE
+            labels=db.labels_
+            numClusters = len(set(labels)) - (1 if -1 in labels else 0)
+            numNoise = list(labels).count(-1)
+            #NON SONO SICURO SU QUALI METRICHE PRENDERE
+            homogeneity=homogeneity_score(labels_true, labels)
+            completeness=completeness_score(labels_true, labels)
 except ValueError:
     print("error")
