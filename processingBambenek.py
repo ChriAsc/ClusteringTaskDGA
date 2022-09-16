@@ -83,7 +83,7 @@ datasetWriter.metadata_writer(f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFe
                               new_metadata)
 # determinazione del numero di campioni per ogni famiglia rispetto al totale dei campioni
 family_distribution = get_families_distribution(spark, sqlContext, f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFeed.csv")
-
+family_distribution.show(100)
 """
 ISTRUZIONI PER STUDIARE LE SOVRAPPOSIZIONI TRA I DOMINI DI ALCUNE FAMIGLIE
 old_feeds = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(f"{os.environ['HOME']}//progettoBDA/Feed/bambenekFeed.csv")

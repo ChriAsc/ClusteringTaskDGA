@@ -33,3 +33,25 @@ def getNGrams(df):
                                                           concat_ws(" ", filter("trigrams", is_trigram)).alias(
                                                               "trigrams"))
     return processed_domains
+
+def getNGrams_GARR(df):
+    df = df.withColumn("array_word", split(df["noDotsDomain"], ''))
+    unigrams = NGram(n=1, inputCol="array_word", outputCol="characters")
+    bigrams = NGram(n=2, inputCol="array_word", outputCol="bigrams")
+    trigrams = NGram(n=3, inputCol="array_word", outputCol="trigrams")
+    unigram_domains = unigrams.transform(df)
+    bigrams_domains = bigrams.transform(unigram_domains)
+    ngrams_domains = trigrams.transform(bigrams_domains)
+    ngrams_domains_transformed = ngrams_domains.select("noDotsDomain", "domain",
+                                                       concat_ws(" ", "characters").alias("characters"),
+                                                       transform("bigrams",
+                                                                 lambda x: concat_ws("", split(x, '[ ]'))).alias(
+                                                           "bigrams"),
+                                                       transform("trigrams",
+                                                                 lambda x: concat_ws("", split(x, '[ ]'))).alias(
+                                                           "trigrams"))
+    processed_domains = ngrams_domains_transformed.select("noDotsDomain", "domain", "characters",
+                                                          concat_ws(" ", filter("bigrams", is_bigram)).alias("bigrams"),
+                                                          concat_ws(" ", filter("trigrams", is_trigram)).alias(
+                                                              "trigrams"))
+    return processed_domains

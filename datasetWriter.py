@@ -30,13 +30,13 @@ def dataset_writer_fasttext(base_path: str, dataset: DataFrame):
     """
     with open(f"{base_path}Chars.txt", 'w') as filehandle:
         for domain in dataset.collect():
-            filehandle.write(f"{domain[4]}\n")
+            filehandle.write(f"{domain[-3]}\n")
     with open(f"{base_path}Bigrams.txt", 'w') as filehandle:
         for domain in dataset.collect():
-            filehandle.write(f"{domain[5]}\n")
+            filehandle.write(f"{domain[-2]}\n")
     with open(f"{base_path}Trigrams.txt", 'w') as filehandle:
         for domain in dataset.collect():
-            filehandle.write(f"{domain[6]}\n")
+            filehandle.write(f"{domain[-1]}\n")
 
 
 def metadata_writer(path: str, metadata: Dict):
