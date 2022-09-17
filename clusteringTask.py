@@ -70,7 +70,8 @@ def run(embedding_type="characters"):
     try:
         # NUMERI DA SCEGLIERE
         start = time.time()
-        columns = ["model", "epochs", "dimension", "homogeneity", "completeness", "v_measure", "duration"]
+        columns = ["model", "epochs", "dimension", "homogeneity", "completeness",
+                   "v_measure", "numClusters", "duration"]
         results = pd.DataFrame(columns=columns)
         dataset = pd.read_csv('twoClassFullyBalanced.csv')  # NOME TEMPORANEO
         domain_names = dataset[embedding_type].to_numpy()
@@ -131,7 +132,7 @@ def run(embedding_type="characters"):
                     end_iteration = time.time()
                     results = pd.concat([results,
                                          pd.DataFrame([[model_type, epoch, dim, homogeneity, completeness,
-                                                        v1_measure, end_iteration-start_iteration]],
+                                                        v1_measure, numClusters, end_iteration-start_iteration]],
                                                       columns=columns)])
         end = time.time()
         results.to_csv(f"{embedding_type}_results.csv", index=False)
