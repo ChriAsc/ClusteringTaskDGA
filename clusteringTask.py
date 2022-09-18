@@ -78,7 +78,7 @@ def run(embedding_type="characters"):
         #domain_names = dataset["noDotsDomain"].to_numpy()
         family_dict = {family: i for i, family in enumerate(sorted(set(dataset["family"])), 1)}
         labels_true = [family_dict[family] for family in dataset["family"].to_numpy()]
-        max_len = domain_names.max()
+        max_len = np.max([len(x) for x in domain_names])
         """vectorizer = CountVectorizer(analyzer='char')  # ngram_range=(3,3)
         vectorizer.fit(domain_names)
         word_index = vectorizer.vocabulary_
@@ -91,8 +91,8 @@ def run(embedding_type="characters"):
                     model_skipgram = run_fasttext_training(basepath_train_data, model_type, dim, epoch, embedding_type)
                     dict_skipgram = getDict(model_skipgram)
                     """for w,i in word_index.items():
-                        if dict_skipgram[w] is not None:
-                            embedding_matrix[i] = dict_skipgram[w] """
+                        if dict_skipgram.get(w) is not None:
+                            embedding_matrix[i] = dict_skipgram.get(w) """
                     embedded_domain_names = []
                     for name in domain_names:
                         # embedded_domain_name = np.concatenate(([word_index[char] for char in name],
