@@ -39,7 +39,7 @@ for family in classes:
     dga_dataset_balanced = dga_dataset_balanced.union(to_append)
 
 # creating two versions of balanced datasets with unigrams, bigrams and trigrams
-balanced_v1 = balanced_v1.union(dga_dataset_balanced.sample(0.15).limit(5000))
+balanced_v1 = balanced_v1.union(dga_dataset_balanced.sample(0.002))
 fasttext_v1 = fasttext_v1.union(dga_dataset_balanced.subtract(balanced_v1).limit(5000))
 final_balanced_v1 = getNGrams(balanced_v1)
 final_fasttext_v1 = getNGrams(fasttext_v1)

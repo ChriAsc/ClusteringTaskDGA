@@ -10,7 +10,11 @@ from sklearn.metrics import homogeneity_score, completeness_score, v_measure_sco
 # from sklearn.feature_extraction.text import CountVectorizer
 
 basepath_train_data = ""
-
+embedding_params = {
+    "characters": (1,1),
+    "bigrams": (2,2),
+    "trigrams": (3,3)
+}
 
 def getDict(model):
     """ Convert FastText bin model in a character dictionary for the embedding
@@ -58,9 +62,10 @@ def run_fasttext_training(train_data_path, model_type, dim, epoch, mode="charact
 
 
 def get_dist_alternative(v1, v2, **kwargs):
-    mat1 = np.array([feature for elem in v1 for feature in kwargs["metric_params"]["embedding"][elem]])
-    mat2 = np.array([feature for elem in v2 for feature in kwargs["metric_params"]["embedding"][elem]])
-    return np.linalg.norm(mat1-mat2)
+    mat1 = np.array([feature for elem in v1 for feature in kwargs["embedding"][int(elem)]])
+    mat2 = np.array([feature for elem in v2 for feature in kwargs["embedding"][int(elem)]])
+    return np.linalg.norm(mat1 - mat2)
+
 
 def get_dist(mat1, mat2):
     return np.linalg.norm(mat1-mat2)
@@ -75,12 +80,12 @@ def run(embedding_type="characters"):
         results = pd.DataFrame(columns=columns)
         dataset = pd.read_csv('twoClassFullyBalanced.csv')  # NOME TEMPORANEO
         domain_names = dataset[embedding_type].to_numpy()
-        #domain_names = dataset["noDotsDomain"].to_numpy()
+        #domain_names_for_vectorizing = dataset["noDotsDomain"].to_numpy()
         family_dict = {family: i for i, family in enumerate(sorted(set(dataset["family"])), 1)}
         labels_true = [family_dict[family] for family in dataset["family"].to_numpy()]
         max_len = np.max([len(x) for x in domain_names])
-        """vectorizer = CountVectorizer(analyzer='char')  # ngram_range=(3,3)
-        vectorizer.fit(domain_names)
+        """vectorizer = CountVectorizer(analyzer='char', ngram_range=embedding_params[embedding_type])
+        vectorizer.fit(domain_names_for_vectorizing)
         word_index = vectorizer.vocabulary_
         max_features = len(word_index)"""
         for model_type in ["skipgram", "cbow"]:
@@ -92,14 +97,15 @@ def run(embedding_type="characters"):
                     dict_skipgram = getDict(model_skipgram)
                     """for w,i in word_index.items():
                         if dict_skipgram.get(w) is not None:
-                            embedding_matrix[i] = dict_skipgram.get(w) """
+                            embedding_matrix[i] = dict_skipgram[w]"""
                     embedded_domain_names = []
                     for name in domain_names:
-                        # embedded_domain_name = np.concatenate(([word_index[char] for char in name],
-                        #                                        np.full(max_len-len(name),max_features)), axis=None)
+                        # embedded_domain_name = np.concatenate(([word_index[token] for char in name.split()],
+                        #                                        np.full(max_len-len(name.split()),max_features)), axis=None)
                         embedded_domain_name = np.concatenate(
-                            (np.array([dict_skipgram[char] for char in name]), np.zeros(dim, max_len-len(name))), axis=1)
+                            (np.array([dict_skipgram[token] for token in name.split()]), np.zeros(dim, max_len-len(name.split()))), axis=1)
                         embedded_domain_names.append(embedded_domain_name)
+                    embedded_domain_names = np.array(embedded_domain_names)
                     # SCELTA PARAMETRI DBSCAN
                     # a rule of thumb is to derive minPts from the number of dimensions D in the data set. minPts >= D + 1.
                     # For larger datasets, with much noise, it suggested to go with minPts = 2 * D.
@@ -108,10 +114,9 @@ def run(embedding_type="characters"):
                     # nn: NearestNeighbors = NearestNeighbors(n_neighbors=minPoints, metric=get_dist_alternative,metric_params={"embedding": embedding_matrix})
                     nn = NearestNeighbors(n_neighbors=minPoints, metric=get_dist)
                     nn.fit(embedded_domain_names)
-                    distances: np.ndarray = nn.kneighbors(embedded_domain_names)[0]
+                    distances = [x[-1] for x in nn.kneighbors(embedded_domain_names)[0]]
                     distances.sort()
-                    kneedle = KneeLocator(range(
-                        1, len(distances)+1), distances, S=1.0, curve='convex', direction='increasing')
+                    kneedle = KneeLocator(list(range(1, len(distances)+1)), distances, S=1.0, curve='convex', direction='increasing')
                     eps = round(kneedle.knee_y, 8)
                     # ESECUZIONE DBSCAN
                     #NELLA PAGINA DI SKLEARN DEL DBSCAN DICONO CHE PER RIDURRE LA COMPLESSITA':
@@ -136,7 +141,7 @@ def run(embedding_type="characters"):
                                                       columns=columns)])
         end = time.time()
         results.to_csv(f"{embedding_type}_results.csv", index=False)
-        print(f"Took{end-start} seconds to perform task with {embedding_type} embedding")
+        print(f"Took {end-start} seconds to perform task with {embedding_type} embedding")
     except ValueError:
         print("error")
 
