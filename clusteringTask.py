@@ -103,7 +103,7 @@ def run(embedding_type="characters"):
                         # embedded_domain_name = np.concatenate(([word_index[token] for char in name.split()],
                         #                                        np.full(max_len-len(name.split()),max_features)), axis=None)
                         embedded_domain_name = np.concatenate(
-                            (np.array([dict_skipgram[token] for token in name.split()]), np.zeros(dim, max_len-len(name.split()))), axis=1)
+                            (np.array([dict_skipgram[token] for token in name.split()]), np.zeros((dim, max_len-len(name.split())))), axis=1)
                         embedded_domain_names.append(embedded_domain_name)
                     embedded_domain_names = np.array(embedded_domain_names)
                     # SCELTA PARAMETRI DBSCAN
