@@ -100,10 +100,12 @@ def run(embedding_type="characters"):
                             embedding_matrix[i] = dict_skipgram[w]"""
                     embedded_domain_names = []
                     for name in domain_names:
-                        # embedded_domain_name = np.concatenate(([word_index[token] for char in name.split()],
-                        #                                        np.full(max_len-len(name.split()),max_features)), axis=None)
-                        embedded_domain_name = np.concatenate(
-                            (np.array([dict_skipgram[token] for token in name.split()]), np.zeros((dim, max_len-len(name.split())))), axis=1)
+                        # sequence_indexes = [word_index[token] for char in name.split()]
+                        # pad = np.full(max_len-len(name.split()),max_features)
+                        # embedded_domain_name = np.concatenate((sequence_indexes, pad), axis=None)
+                        sequence = np.reshape([dict_skipgram[token] for token in name.split()], (dim,len(name.split())))
+                        pad = np.zeros((dim, max_len-len(name.split())))
+                        embedded_domain_name = np.concatenate((sequence, pad), axis=1)
                         embedded_domain_names.append(embedded_domain_name)
                     embedded_domain_names = np.array(embedded_domain_names)
                     # SCELTA PARAMETRI DBSCAN
