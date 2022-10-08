@@ -38,7 +38,7 @@ folders.remove("scarica.py")
 fasttext_domains = spark.createDataFrame([], StructType([StructField("domain", StringType(), True)]))
 logs = os.listdir(f"{path}/{folders[0]}")
 logs.sort()
-logs = logs[:6]
+logs = logs[:4]
 for log in logs:
     with lzma.open(f"{path}/{folders[0]}/{log}", mode='rt') as garr_feed:
         lines = garr_feed.readlines()
@@ -46,7 +46,7 @@ for log in logs:
         to_append = spark.createDataFrame(new_lines, schema)
         to_append = to_append.filter(to_append['IPADDRESSAnswer'] != "NXDOMAIN")\
             .filter(to_append['IPADDRESSAnswer'] != "SERVFAIL").filter(to_append['IPADDRESSAnswer'] != "REFUSED")\
-            .filter("length(domain) < 64 and length(domain) > 1").filter(to_append["domain"])
+            .filter("length(domain) < 64 and length(domain) > 1")
         to_append = to_append.withColumn("domain", expr("substring(domain, 0,length(domain)-1)"))
         to_append = to_append.select(["domain", "IPADDRESSAnswer"])
         to_append = to_append.withColumn("domain", when(lower(to_append["domain"]).like("%.in-addr.arpa%"),
@@ -59,7 +59,7 @@ for log in logs:
                                                         concat_ws('.', slice(split("domain", '[-]'), 2,
                                                                              size(split("domain", '[-]')))))
                                          .otherwise(to_append["domain"]))
-        fasttext_domains = fasttext_domains.union(to_append.select("domain")).dropDuplicates()
+        fasttext_domains = fasttext_domains.union(to_append.select("domain"))
 
 fasttext_domains = fasttext_domains.withColumn("noDotsDomain", concat_ws('', split("domain", '[.]')))
 final_fasttext_domains = getNGrams_GARR(fasttext_domains)

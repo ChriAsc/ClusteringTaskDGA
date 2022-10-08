@@ -27,7 +27,7 @@ schema = StructType([
 # schema per la scrittura dei dati sul feed complessivo dei domini malevoli
 write_schema = StructType([
     StructField("domain", StringType(), True),
-    StructField("description", StringType(), True)
+    StructField("family", StringType(), True)
 ])
 
 # raccolta e ordinamento in una lista di tutti i nomi dei file del bambenek feed
