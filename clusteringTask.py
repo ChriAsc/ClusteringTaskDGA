@@ -82,6 +82,7 @@ def run(embedding_type="characters"):
     family_dict = {family: i for i, family in enumerate(sorted(set(dataset["family"])), 1)}
     labels_true = [family_dict[family] for family in dataset["family"].to_numpy()]
     max_len = np.max([len(x) for x in domain_names])
+    epsilons = [(4*20*max_len)/i for i in [32, 16, 8, 4, 2]]
     #vectorizer = CountVectorizer(analyzer='char', ngram_range=embedding_params[embedding_type])
     #vectorizer.fit(domain_names_for_vectorizing)
     #word_index = vectorizer.vocabulary_
@@ -107,8 +108,7 @@ def run(embedding_type="characters"):
             # a rule of thumb is to derive minPts from the number of dimensions D in the data set. minPts >= D + 1.
             # For larger datasets, with much noise, it suggested to go with minPts = 2 * D.
             for minPoints in range((dim*max_len)+1, (2*dim*max_len)+1, (dim*max_len) // 5):
-                min_eps = max_eps = passo = 0
-                for eps in range(min_eps, max_eps, passo):
+                for eps in epsilons:
                     #SE HO BEN CAPITO VA PASSATA LA MATRICE SOPRA SE PRECALCOLATA
                     db = DBSCAN(eps=eps, min_samples=minPoints, metric="euclidean")
                     db.fit(embedded_domain_names)
