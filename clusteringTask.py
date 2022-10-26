@@ -110,7 +110,7 @@ def run(embedding_type="characters"):
             for minPoints in range((dim*max_len)+1, (2*dim*max_len)+1, (dim*max_len) // 5):
                 for eps in epsilons:
                     #SE HO BEN CAPITO VA PASSATA LA MATRICE SOPRA SE PRECALCOLATA
-                    db = DBSCAN(eps=eps, min_samples=minPoints, metric="euclidean")
+                    db = DBSCAN(eps=eps, min_samples=minPoints, metric="euclidean", algorithm="auto")
                     db.fit(embedded_domain_names)
                     # CONTROLLO PERFORMANCE RISPETTO AL PRECEDENTE RISULTATO MIGLIORE
                     labels = db.labels_
