@@ -1,6 +1,6 @@
 import os.path
 import time
-
+import math
 import numpy as np
 import pandas as pd
 import fasttext
@@ -75,7 +75,7 @@ def run(embedding_type="characters"):
     family_dict = {family: i for i, family in enumerate(sorted(set(dataset["family"])), 1)}
     labels_true = [family_dict[family] for family in dataset["family"].to_numpy()]
     max_len = np.max([len(x.split()) for x in domain_names])
-    epsilons = [(4*10*max_len)/i for i in [32, 16, 8, 4, 2]]
+    epsilons = [math.sqrt((4*10*max_len))/i for i in [32, 16, 8, 4, 2]]
     print(f"Starting Clustering algorithm. No_samples={len(dataset)}")
     for epoch in range(3, 8, 2):
         for dim in range(2, 11, 2):
