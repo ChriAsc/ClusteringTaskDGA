@@ -105,7 +105,10 @@ def run(embedding_type="characters"):
                     homogeneity = homogeneity_score(labels_true, labels)
                     completeness = completeness_score(labels_true, labels)
                     v1_measure = v_measure_score(labels_true, labels)
-                    silhouette = silhouette_score(embedded_domain_names, labels, metric="euclidean")
+                    if numClusters != 0:
+                        silhouette = silhouette_score(embedded_domain_names, labels, metric="euclidean")
+                    else:
+                        silhouette = None
                     end_iteration = time.time()
                     print()
                     print({"numNoise": numNoise, "numClusters": numClusters})
