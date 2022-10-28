@@ -76,6 +76,7 @@ def run(embedding_type="characters"):
     labels_true = [family_dict[family] for family in dataset["family"].to_numpy()]
     max_len = np.max([len(x.split()) for x in domain_names])
     epsilons = [(4*10*max_len)/i for i in [32, 16, 8, 4, 2]]
+    print(f"Starting Clustering algorithm. No_samples={len(dataset)}")
     for epoch in range(3, 8, 2):
         for dim in range(2, 11, 2):
             model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", dim, epoch, embedding_type)
@@ -104,7 +105,7 @@ def run(embedding_type="characters"):
                     homogeneity = homogeneity_score(labels_true, labels)
                     completeness = completeness_score(labels_true, labels)
                     v1_measure = v_measure_score(labels_true, labels)
-                    silhouette = silhouette_score(embedded_domain_names, metric="euclidean")
+                    silhouette = silhouette_score(embedded_domain_names, labels, metric="euclidean")
                     end_iteration = time.time()
                     print()
                     print({"numNoise": numNoise, "numClusters": numClusters})
