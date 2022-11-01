@@ -69,14 +69,14 @@ def run(embedding_type="characters"):
     # DEFINIZIONE STRUTTURA FOGLIO DEI RISULTATI
     columns = ["iteration", "epochs", "dimension", "max_distance"]
     dataset_base = pd.read_csv('/media/lorenzo/Partizione Dati/progettoBDA/datasets/bambenekBigrams.csv')
-    old_result = pd.read_csv("/media/lorenzo/Partizione Dati/progettoBDA/datasets/distances_results.csv").iloc[-1]
-    for i in range(580, 1001):
+    #old_result = pd.read_csv("/media/lorenzo/Partizione Dati/progettoBDA/datasets/distances_results.csv").iloc[-1]
+    for i in range(400, 401):
         dataset = dataset_base.sample(frac=0.01)
         domain_names = dataset[embedding_type].to_numpy()
         max_len = np.max([len(x.split()) for x in domain_names])
         for epoch in range(10, 11, 5):
             for dim in range(2, 11, 2):
-                if int(old_result["iteration"]) < i or (int(old_result["iteration"]) and old_result["dimension"] < dim):
+                ##if int(old_result["iteration"]) < i or (int(old_result["iteration"]) and old_result["dimension"] < dim):
                     model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", dim, epoch, embedding_type)
                     dict_skipgram = getDict(model_skipgram)
                     embedded_domain_names = []
@@ -95,8 +95,8 @@ def run(embedding_type="characters"):
                     max_distance = np.max(distances)
                     print(f"max_distance={max_distance} with epoch={epoch} dim={dim}, iteration={i}")
                     results = pd.DataFrame([[i, epoch, dim, max_distance]], columns=columns)
-                    results.to_csv(f"/media/lorenzo/Partizione Dati/progettoBDA/datasets/distances_results.csv", index=False, mode='a',
-                                   header=not os.path.exists(f"/media/lorenzo/Partizione Dati/progettoBDA/datasets/distances_results.csv"))
+                    results.to_csv(f"/media/lorenzo/Partizione Dati/progettoBDA/datasets/distances/distances_results_323-400", index=False, mode='a',
+                                   header=not os.path.exists(f"/media/lorenzo/Partizione Dati/progettoBDA/datasets/distances/distances_results_323-400.csv"))
 
 
 if __name__ == "__main__":
