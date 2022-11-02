@@ -4,6 +4,7 @@ import math
 import numpy as np
 import pandas as pd
 import fasttext
+from kneed import KneeLocator
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import homogeneity_score, completeness_score, v_measure_score, silhouette_score
@@ -105,10 +106,13 @@ def run(embedding_type="characters"):
                         # Determinazione della matrice Sparsa per semplificare il DBSCAN
                         nn: NearestNeighbors = NearestNeighbors(n_neighbors=minPoints, metric="euclidean", algorithm="auto")
                         nn.fit(embedded_domain_names)
-                        sparseMatrix = nn.radius_neighbors_graph(embedded_domain_names, radius=eps,
-                                                                 mode="distance", sort_results=True)
-                        db = DBSCAN(eps=eps, min_samples=minPoints, metric="precomputed")
-                        db.fit(sparseMatrix)
+                        distances = [x[-1] for x in nn.kneighbors(embedded_domain_names)[0]]
+                        distances.sort()
+                        kneedle = KneeLocator(list(range(1, len(distances) + 1)), distances, S=1.0, curve='convex',
+                                              direction='increasing')
+                        eps = round(kneedle.knee_y, 8)
+                        db = DBSCAN(eps=eps, min_samples=minPoints, metric="euclidean", algorithm='auto')
+                        db.fit(embedded_domain_names)
                         # CALCOLO DELLE METRICHE SCELTE
                         labels = db.labels_
                         numClusters = len(set(labels)) - (1 if -1 in labels else 0)
