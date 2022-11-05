@@ -8,41 +8,46 @@ third_part = pd.read_csv("/media/lorenzo/Partizione Dati/progettoBDA/results_e10
 frames = [first_part, second_part, third_part]
 complete = pd.concat(frames)
 sns.set()
-for measure in ["homogeneity", "completeness", "silhouette_score", "v_measure"]:
-    dimensions = [complete[complete["dimension"] == dim].pivot("minPoints", "epsilon", measure)
-                  for dim in range(2, 11, 2)]
-    figure, axes = plt.subplots(2, 3)
-    figure.suptitle(f"{measure} data for all dimensions")
-    figure.set_size_inches(18.5, 10.5)
+graphics = [["homogeneity", "completeness"], ["silhouette_score"], ["v_measure"]]
+for graph in graphics:
+    figure, axes = plt.subplots(len(graph), 5)
+    figure.suptitle(f"{graph[0]} and {graph[1]} scores for all dimensions" if len(graph) > 1
+                    else f"{graph[0]} scores for all dimensions")
+    if len(graph) > 1:
+        figure.set_size_inches(30, 12)
+    else:
+        figure.set_size_inches(30, 6)
     figure.tight_layout(pad=3.5)
-    for i in range(0, 5):
-        dimensions[i].sort_index(level=0, ascending=False, inplace=True)
-        if i in [0, 1, 2]:
-            sns.heatmap(dimensions[i], ax=axes[0, i], annot=True, linewidths=.5, fmt='.4f', cmap='crest')
-            axes[0, i].set_title(f"{measure} with fasttext dimension {(i+1)*2}")
-        else:
-            sns.heatmap(dimensions[i], ax=axes[1, i-3], annot=True, linewidths=.5, fmt='.4f', cmap='crest')
-            axes[1, i-3].set_title(f"{measure} with fasttext dimension {(i+1)*2}")
-        figure.savefig(f"/media/lorenzo/Partizione Dati/progettoBDA/results_e10/{measure}e10")
+    for measure in graph:
+        dimensions = [complete[complete["dimension"] == dim].pivot("minPoints", "epsilon", measure)
+                      for dim in range(2, 11, 2)]
+        for i in range(0, 5):
+            dimensions[i].sort_index(level=0, ascending=False, inplace=True)
+            if len(graph) > 1:
+                sns.heatmap(dimensions[i], ax=axes[graph.index(measure), i], annot=True, linewidths=.5, fmt='.4f',
+                            cmap='crest')
+                axes[graph.index(measure), i].set_title(f"{measure} with fasttext dimension {(i+1)*2}")
+            else:
+                sns.heatmap(dimensions[i], ax=axes[i], annot=True, linewidths=.5, fmt='.4f',
+                            cmap='crest')
+                axes[i].set_title(f"{measure} with fasttext dimension {(i + 1) * 2}")
+    figure.savefig(f"/media/lorenzo/Partizione Dati/progettoBDA/results_e10/{graph[0]}_{graph[1]}_e10" if len(graph) > 1
+                   else f"/media/lorenzo/Partizione Dati/progettoBDA/results_e10/{graph[0]}_e10")
 
-for num in ["num_clusters", "num_noise"]:
+nums = ["num_clusters", "num_noise"]
+figure, axes = plt.subplots(2, 5)
+figure.suptitle(f"{nums[0]} and {nums[1]} data for all dimensions")
+figure.set_size_inches(30, 12)
+figure.tight_layout(pad=3.5)
+for num in nums:
     dimensions = [complete[complete["dimension"] == dim].pivot("minPoints", "epsilon", num)
                   for dim in range(2, 11, 2)]
-    figure, axes = plt.subplots(2, 3)
-    figure.suptitle(f"{num} data for all dimensions")
-    figure.set_size_inches(18.5, 10.5)
-    figure.tight_layout(pad=3.5)
     for i in range(0, 5):
         dimensions[i].sort_index(level=0, ascending=False, inplace=True)
-        if i in [0, 1, 2]:
-            sns.heatmap(dimensions[i], ax=axes[0, i], annot=True, linewidths=.5, fmt='d',
-                        cmap=sns.cubehelix_palette(rot=-.2, as_cmap=True))
-            axes[0, i].set_title(f"{num} with fasttext dimension {(i+1)*2}")
-        else:
-            sns.heatmap(dimensions[i], ax=axes[1, i-3], annot=True, linewidths=.5, fmt='d',
-                        cmap=sns.cubehelix_palette(rot=-.2, as_cmap=True))
-            axes[1, i-3].set_title(f"{num} with fasttext dimension {(i+1)*2}")
-        figure.savefig(f"/media/lorenzo/Partizione Dati/progettoBDA/results_e10/{num}e10")
+        sns.heatmap(dimensions[i], ax=axes[nums.index(num), i], annot=True, linewidths=.5, fmt='d',
+                    cmap=sns.cubehelix_palette(rot=-.2, as_cmap=True))
+        axes[nums.index(num), i].set_title(f"{num} with fasttext dimension {(i+1)*2}")
+figure.savefig(f"/media/lorenzo/Partizione Dati/progettoBDA/results_e10/{nums[0]}_{nums[1]}e10")
 
 """plt.plot(complete[(complete["dimension"] == 2) & (complete["minPoints"] == 95)]["epsilon"],
          complete[(complete["dimension"] == 2) & (complete["minPoints"] == 95)]["homogeneity"], 'ro-',
