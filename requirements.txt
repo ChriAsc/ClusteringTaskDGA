@@ -7,3 +7,4 @@ scikit-learn==1.1.2
 kneed==0.8.1
 natsort~=8.2.0
 matplotlib~=3.6.1
+seaborn~=0.12.1
