@@ -65,13 +65,12 @@ def run_fasttext_training(train_data_path, model_type, dim, epoch, mode="charact
 def run(embedding_type="characters"):
     # NUMERI DA SCEGLIERE
     start = time.time()
-    # DEFINIZIONE STRUTTURA FOGLIO DEI RISULTATI
-    columns = ["epochs", "dimension", "minPoints", "epsilon", "homogeneity", "completeness",
-               "v_measure", "silhouette_score", "num_clusters", "num_noise", "duration"]
     # COLLEZIONAMENTO DATI DAL DATASET
     dataset = pd.read_csv('/home/lorenzo/progettoBDA/datasets/bambenekBigrams.csv').sample(frac=0.01)
+    dataset.reset_index(drop=True, inplace=True)
     domain_names = dataset[embedding_type].to_numpy()
     family_dict = {family: i for i, family in enumerate(sorted(set(dataset["family"])), 1)}
+    print(family_dict)
     labels_true = [family_dict[family] for family in dataset["family"].to_numpy()]
     labels_true_column = pd.Series(labels_true)
     family_label_column = dataset["family"]
@@ -99,25 +98,32 @@ def run(embedding_type="characters"):
             labels_pred_column = pd.Series(labels)
             numClusters = len(set(labels)) - (1 if -1 in labels else 0)
             numNoise = list(labels).count(-1)
-            """silhouettes = silhouette_samples(embedded_domain_names, labels, metric="euclidean")
+            silhouettes = silhouette_samples(embedded_domain_names, labels, metric="euclidean")
             silhouette_column = pd.Series(silhouettes)
             results_silhouettes = pd.DataFrame({"family": family_label_column, "true_labels": labels_true_column,
                                                 "pred_labels": labels_pred_column, "silhouettes": silhouette_column})
-            results_silhouettes.to_csv(f"{base_path}/silhouettes_data_e{20}_d{dim}")"""
+            results_silhouettes.to_csv(f"{base_path}/silhouettes_data_e{20}_d{dim}.csv", index=False)
             # MATRICE DI CONFUSIONE
             df = pd.DataFrame({'Labels': labels_true, 'Clusters': labels})
             ct = pd.crosstab(df['Labels'], df['Clusters'])
-            print(ct)
+            #print(ct)
             precisions = {}
             # RECALL E PRECISION PER OGNI CLUSTER
             to_cycle = set(labels)
             to_cycle.remove(-1)
             if to_cycle is not None:
                 for cluster in sorted(to_cycle):
-                    precision_list = [ct.iloc[family-1][cluster]/sum(ct[cluster]) for family in sorted(set(labels_true))]
+                    precision_list = [ct[cluster][family]/sum(ct[cluster]) for family in sorted(set(labels_true))]
                     precisions.update({cluster: precision_list})
                 precision_tab = pd.DataFrame(precisions)
-                print(precision_tab)
+                #print(precision_tab)
+            recalls = {}
+            if to_cycle is not None:
+                for cluster in sorted(to_cycle):
+                    recall_list = [ct[cluster][family]/sum(ct.iloc[family-1]) for family in sorted(set(labels_true))]
+                    recalls.update({cluster: recall_list})
+                recall_tab = pd.DataFrame(recalls)
+                #print(recall_tab)
             end_iteration = time.time()
             # SCRITTURA DEI RISULTATI SU FILE
             print()
