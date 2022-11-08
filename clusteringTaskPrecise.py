@@ -6,8 +6,8 @@ import fasttext
 from sklearn.cluster import DBSCAN
 from sklearn.metrics import silhouette_samples, confusion_matrix
 
-basepath_train_data = "/home/lorenzo/progettoBDA/datasets/"
-base_path = "/home/lorenzo/progettoBDA/PrecisedResults/"
+basepath_train_data = "/media/lorenzo/Partizione Dati/progettoBDA/datasets/"
+base_path = "/media/lorenzo/Partizione Dati/progettoBDA/"
 embedding_params = {
     "characters": (1, 1),
     "bigrams": (2, 2),
@@ -66,11 +66,10 @@ def run(embedding_type="characters"):
     # NUMERI DA SCEGLIERE
     start = time.time()
     # COLLEZIONAMENTO DATI DAL DATASET
-    dataset = pd.read_csv('/home/lorenzo/progettoBDA/datasets/bambenekBigrams.csv').sample(frac=0.01)
+    dataset = pd.read_csv(f"{base_path}/datasets/bambenekBigrams.csv")
     dataset.reset_index(drop=True, inplace=True)
     domain_names = dataset[embedding_type].to_numpy()
     family_dict = {family: i for i, family in enumerate(sorted(set(dataset["family"])), 1)}
-    print(family_dict)
     labels_true = [family_dict[family] for family in dataset["family"].to_numpy()]
     labels_true_column = pd.Series(labels_true)
     family_label_column = dataset["family"]
@@ -78,8 +77,8 @@ def run(embedding_type="characters"):
     print(f"Starting Clustering algorithm. No_samples={len(dataset)}")
     eps = {4: 3.0, 5: 3.6}
     min_Points_dict = {4: [189, 226], 5: [236, 283]}
-    for dim in range(4, 6):
-        model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", dim, 2, embedding_type)
+    for dim in range(4, 5):
+        model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", dim, 20, embedding_type)
         dict_skipgram = getDict(model_skipgram)
         embedded_domain_names = []
         for name in domain_names:
@@ -100,35 +99,42 @@ def run(embedding_type="characters"):
             numNoise = list(labels).count(-1)
             silhouettes = silhouette_samples(embedded_domain_names, labels, metric="euclidean")
             silhouette_column = pd.Series(silhouettes)
-            results_silhouettes = pd.DataFrame({"family": family_label_column, "true_labels": labels_true_column,
-                                                "pred_labels": labels_pred_column, "silhouettes": silhouette_column})
-            results_silhouettes.to_csv(f"{base_path}/silhouettes_data_e{20}_d{dim}.csv", index=False)
+            results_silhouettes = pd.DataFrame({"family": family_label_column, "true_label": labels_true_column,
+                                                "pred_label": labels_pred_column, "silhouettes": silhouette_column})
+            results_silhouettes.to_csv(f"{base_path}/PrecisedResults/silhouettes_data_e{20}_d{dim}_mPoints{minPoints}.csv",
+                                       index=False)
             # MATRICE DI CONFUSIONE
             df = pd.DataFrame({'Labels': labels_true, 'Clusters': labels})
             ct = pd.crosstab(df['Labels'], df['Clusters'])
-            #print(ct)
+            ct_labelled = ct.set_index(pd.Index([family for family, i in family_dict.items()]))\
+                .rename(columns={i: f"cluster_{i}" if i != -1 else "cluster_noise" for i in ct.columns})
             precisions = {}
+            ct_labelled.to_csv(f"{base_path}/PrecisedResults/confusion_matrix_e{20}_d{dim}_mPoints{minPoints}.csv")
             # RECALL E PRECISION PER OGNI CLUSTER
             to_cycle = set(labels)
             to_cycle.remove(-1)
-            if to_cycle is not None:
-                for cluster in sorted(to_cycle):
-                    precision_list = [ct[cluster][family]/sum(ct[cluster]) for family in sorted(set(labels_true))]
-                    precisions.update({cluster: precision_list})
-                precision_tab = pd.DataFrame(precisions)
-                #print(precision_tab)
+            for cluster in sorted(to_cycle):
+                i_cluster = f"cluster_{cluster}"
+                precision_list = [ct_labelled[i_cluster][family]/sum(ct_labelled[i_cluster])
+                                  for family, i in family_dict.items()]
+                precisions.update({f"cluster_{cluster}": precision_list})
+            precision_tab = pd.DataFrame(precisions).set_index(pd.Index([family
+                                                                         for family, i in family_dict.items()]))
+            precision_tab.to_csv(f"{base_path}/PrecisedResults/precision_data_e{20}_d{dim}_mPoints{minPoints}.csv")
             recalls = {}
-            if to_cycle is not None:
-                for cluster in sorted(to_cycle):
-                    recall_list = [ct[cluster][family]/sum(ct.iloc[family-1]) for family in sorted(set(labels_true))]
-                    recalls.update({cluster: recall_list})
-                recall_tab = pd.DataFrame(recalls)
-                #print(recall_tab)
+            for cluster in sorted(to_cycle):
+                i_cluster = f"cluster_{cluster}"
+                recall_list = [ct_labelled[i_cluster][family-1]/sum(ct_labelled.iloc[family-1])
+                               for family in family_dict.values()]
+                recalls.update({f"cluster_{cluster}": recall_list})
+            recall_tab = pd.DataFrame(recalls).set_index(pd.Index([family
+                                                                   for family, i in family_dict.items()]))
+            recall_tab.to_csv(f"{base_path}/PrecisedResults/recall_data_e{20}_d{dim}_mPoints{minPoints}.csv")
             end_iteration = time.time()
             # SCRITTURA DEI RISULTATI SU FILE
             print()
             print(f"Completed iteration in {time.strftime('%H hour %M minutes %S seconds', time.gmtime(end_iteration-start_iteration))}")
-            print(f"Iteration data: eps={eps}, minPoints={minPoints}, dim={dim} epochs={20}")
+            print(f"Iteration data: eps={eps[dim]}, minPoints={minPoints}, dim={dim} epochs={20}")
     end = time.time()
     print(f"Took {end-start} seconds to perform task with {embedding_type} embedding")
 
