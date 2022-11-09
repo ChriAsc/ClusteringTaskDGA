@@ -1,13 +1,12 @@
-import os.path
 import time
 import numpy as np
 import pandas as pd
 import fasttext
 from sklearn.cluster import DBSCAN
-from sklearn.metrics import silhouette_samples, confusion_matrix
+from sklearn.metrics import silhouette_samples
 
-basepath_train_data = "/media/lorenzo/Partizione Dati/progettoBDA/datasets/"
-base_path = "/media/lorenzo/Partizione Dati/progettoBDA/"
+basepath_train_data = "/home/lorenzo/progettoBDA/datasets/"
+base_path = "/home/lorenzo/progettoBDA/"
 embedding_params = {
     "characters": (1, 1),
     "bigrams": (2, 2),
@@ -77,7 +76,7 @@ def run(embedding_type="characters"):
     print(f"Starting Clustering algorithm. No_samples={len(dataset)}")
     eps = {4: 3.0, 5: 3.6}
     min_Points_dict = {4: [189, 226], 5: [236, 283]}
-    for dim in range(4, 5):
+    for dim in range(4, 6):
         model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", dim, 20, embedding_type)
         dict_skipgram = getDict(model_skipgram)
         embedded_domain_names = []
@@ -95,8 +94,6 @@ def run(embedding_type="characters"):
             # CALCOLO DELLE METRICHE PUNTUALI
             labels = db.labels_
             labels_pred_column = pd.Series(labels)
-            numClusters = len(set(labels)) - (1 if -1 in labels else 0)
-            numNoise = list(labels).count(-1)
             silhouettes = silhouette_samples(embedded_domain_names, labels, metric="euclidean")
             silhouette_column = pd.Series(silhouettes)
             results_silhouettes = pd.DataFrame({"family": family_label_column, "true_label": labels_true_column,
