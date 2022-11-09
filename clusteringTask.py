@@ -1,15 +1,13 @@
 import os.path
 import time
-import math
 import numpy as np
 import pandas as pd
 import fasttext
-from kneed import KneeLocator
 from sklearn.cluster import DBSCAN
-from sklearn.neighbors import NearestNeighbors
-from sklearn.metrics import homogeneity_score, completeness_score, v_measure_score, silhouette_score
+from sklearn.metrics import homogeneity_score, completeness_score, v_measure_score, silhouette_score, silhouette_samples
 
 basepath_train_data = "/media/lorenzo/Partizione Dati/progettoBDA/datasets/"
+base_path = "/media/lorenzo/Partizione Dati/progettoBDA/"
 embedding_params = {
     "characters": (1, 1),
     "bigrams": (2, 2),
@@ -71,75 +69,101 @@ def run(embedding_type="characters"):
     columns = ["epochs", "dimension", "minPoints", "epsilon", "homogeneity", "completeness",
                "v_measure", "silhouette_score", "num_clusters", "num_noise", "duration"]
     # COLLEZIONAMENTO DATI DAL DATASET
-    dataset = pd.read_csv('/media/lorenzo/Partizione Dati/progettoBDA/datasets/bambenekBigrams.csv').sample(0.01)
+    dataset = pd.read_csv(f'{base_path}/datasets/bambenekBigrams.csv').sample(0.01)
     domain_names = dataset[embedding_type].to_numpy()
     family_dict = {family: i for i, family in enumerate(sorted(set(dataset["family"])), 1)}
     labels_true = [family_dict[family] for family in dataset["family"].to_numpy()]
+    labels_true_column = pd.Series(labels_true)
+    family_label_column = dataset["family"]
     max_len = np.max([len(x.split()) for x in domain_names])
-    epsilons = [math.sqrt((4*10*max_len))/i for i in [32, 16, 8, 4, 2]]
+    epoch = 20
+    eps = 2.75
+    dim = 3
     print(f"Starting Clustering algorithm. No_samples={len(dataset)}")
-    model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", 128, 20, embedding_type)
+    model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", dim, epoch, embedding_type)
     dict_skipgram = getDict(model_skipgram)
-    print(dict_skipgram)
-    print(model_skipgram.get_words())
-    last_result = pd.read_csv(f"{embedding_type}_results.csv").iloc[-1] if os.path.exists(f"{embedding_type}_results.csv") \
-        else None
-    min_epoch = last_result["epoch"] if last_result else 10
-    min_dim = last_result["dimension"] if last_result else 2
-    for epoch in range(min_epoch, 21, 5):
-        for dim in range(min_dim, 10, 2):
-            min_minPoints = last_result["minPoints"] if last_result else (dim*max_len)+1
-            model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", dim, epoch, embedding_type)
-            dict_skipgram = getDict(model_skipgram)
-            embedded_domain_names = []
-            for name in domain_names:
-                sequences = np.array(
-                    [dict_skipgram.get(token) if dict_skipgram.get(token) is not None else np.zeros(dim)
-                     for token in name.split()], dtype=np.single)
-                pad = np.zeros(dim * (max_len - len(name.split())), dtype=np.single)
-                embedded_domain_name = np.concatenate((sequences, pad), axis=None, dtype=np.single)
-                embedded_domain_names.append(embedded_domain_name)
-            for minPoints in range(min_minPoints, (2*dim*max_len)+1, (dim*max_len) // 5):
-                for eps in epsilons:
-                    if eps > last_result["epsilon"]:
-                        start_iteration = time.time()
-                        # Determinazione della matrice Sparsa per semplificare il DBSCAN
-                        nn: NearestNeighbors = NearestNeighbors(n_neighbors=minPoints, metric="euclidean", algorithm="auto")
-                        nn.fit(embedded_domain_names)
-                        distances = [x[-1] for x in nn.kneighbors(embedded_domain_names)[0]]
-                        distances.sort()
-                        kneedle = KneeLocator(list(range(1, len(distances) + 1)), distances, S=1.0, curve='convex',
-                                              direction='increasing')
-                        eps = round(kneedle.knee_y, 8)
-                        db = DBSCAN(eps=eps, min_samples=minPoints, metric="euclidean", algorithm='auto')
-                        db.fit(embedded_domain_names)
-                        # CALCOLO DELLE METRICHE SCELTE
-                        labels = db.labels_
-                        numClusters = len(set(labels)) - (1 if -1 in labels else 0)
-                        numNoise = list(labels).count(-1)
-                        homogeneity = homogeneity_score(labels_true, labels)
-                        completeness = completeness_score(labels_true, labels)
-                        v1_measure = v_measure_score(labels_true, labels)
-                        if numClusters > 1:
-                            silhouette = silhouette_score(embedded_domain_names, labels, metric="euclidean")
-                        else:
-                            silhouette = None
-                        end_iteration = time.time()
-                        print()
-                        print({"numNoise": numNoise, "numClusters": numClusters})
-                        print({"homogeneity": homogeneity, "completeness": completeness, "v1_measure": v1_measure,
-                               "silhouette": silhouette})
-                        # SCRITTURA DEI RISULTATI SU FILE
-                        results = pd.DataFrame([[epoch, dim, minPoints, eps, homogeneity, completeness,
-                                                 v1_measure, silhouette, numClusters, numNoise,
-                                                 end_iteration-start_iteration]], columns=columns)
-                        results.to_csv(f"{embedding_type}_results.csv", index=False, mode='a',
-                                       header=not os.path.exists(f"{embedding_type}_results.csv"))
-                        print()
-                        print(f"Completed iteration in {time.strftime('%H hour %M minutes %S seconds', time.gmtime(end_iteration-start_iteration))}")
-                        print(f"Iteration data: eps={eps}, minPoints={minPoints}, dim={dim} epochs={epoch}")
+    embedded_domain_names = []
+    for name in domain_names:
+        sequences = np.array(
+            [dict_skipgram.get(token) if dict_skipgram.get(token) is not None else np.zeros(dim)
+             for token in name.split()], dtype=np.single)
+        pad = np.zeros(dim * (max_len - len(name.split())), dtype=np.single)
+        embedded_domain_name = np.concatenate((sequences, pad), axis=None, dtype=np.single)
+        embedded_domain_names.append(embedded_domain_name)
+    best_silhouette = -1
+    best_silhouette_min_points = 0
+    best_labels = []
+    for minPoints in range((dim*max_len)+1, (2*dim*max_len)+1, (dim*max_len) // 5):
+        start_iteration = time.time()
+        db = DBSCAN(eps=eps, min_samples=minPoints, metric="euclidean", algorithm='auto')
+        db.fit(embedded_domain_names)
+        # CALCOLO DELLE METRICHE SCELTE
+        labels = db.labels_
+        numClusters = len(set(labels)) - (1 if -1 in labels else 0)
+        numNoise = list(labels).count(-1)
+        homogeneity = homogeneity_score(labels_true, labels)
+        completeness = completeness_score(labels_true, labels)
+        v1_measure = v_measure_score(labels_true, labels)
+        if numClusters > 1:
+            silhouette = silhouette_score(embedded_domain_names, labels, metric="euclidean")
+        else:
+            silhouette = None
+        if best_silhouette < silhouette:
+            best_silhouette = silhouette
+            best_silhouette_min_points = minPoints
+            best_labels = labels
+        end_iteration = time.time()
+        print()
+        print({"numNoise": numNoise, "numClusters": numClusters})
+        print({"homogeneity": homogeneity, "completeness": completeness, "v1_measure": v1_measure,
+               "silhouette": silhouette})
+        # SCRITTURA DEI RISULTATI SU FILE
+        results = pd.DataFrame([[epoch, dim, minPoints, eps, homogeneity, completeness,
+                                 v1_measure, silhouette, numClusters, numNoise,
+                                 end_iteration-start_iteration]], columns=columns)
+        results.to_csv(f"{embedding_type}_results.csv", index=False, mode='a',
+                       header=not os.path.exists(f"{embedding_type}_results.csv"))
+        print()
+        print(f"Completed iteration in {time.strftime('%H hour %M minutes %S seconds', time.gmtime(end_iteration-start_iteration))}")
+        print(f"Iteration data: eps={eps}, minPoints={minPoints}, dim={dim} epochs={epoch}")
+
+    # ANALISI PRECISA
+    silhouettes = silhouette_samples(embedded_domain_names, best_labels, metric="euclidean")
+    silhouette_column = pd.Series(silhouettes)
+    labels_pred_column = pd.Series(best_labels)
+    results_silhouettes = pd.DataFrame({"family": family_label_column, "true_label": labels_true_column,
+                                        "pred_label": labels_pred_column, "silhouettes": silhouette_column})
+    results_silhouettes.to_csv(f"{base_path}/PrecisedResults/silhouettes_data_e{20}_d{dim}_mPoints{best_silhouette_min_points}_eps{eps}.csv",
+                               index=False)
+    # MATRICE DI CONFUSIONE
+    df = pd.DataFrame({'Labels': labels_true, 'Clusters': best_labels})
+    ct = pd.crosstab(df['Labels'], df['Clusters'])
+    ct_labelled = ct.set_index(pd.Index([family for family, i in family_dict.items()])) \
+        .rename(columns={i: f"cluster_{i}" if i != -1 else "cluster_noise" for i in ct.columns})
+    precisions = {}
+    ct_labelled.to_csv(f"{base_path}/PrecisedResults/confusion_matrix_e{20}_d{dim}_mPoints{best_silhouette_min_points}_eps{eps}.csv")
+    # RECALL E PRECISION PER OGNI CLUSTER
+    to_cycle = set(best_labels)
+    to_cycle.remove(-1)
+    for cluster in sorted(to_cycle):
+        i_cluster = f"cluster_{cluster}"
+        precision_list = [ct_labelled[i_cluster][family] / sum(ct_labelled[i_cluster])
+                          for family, i in family_dict.items()]
+        precisions.update({f"cluster_{cluster}": precision_list})
+    precision_tab = pd.DataFrame(precisions).set_index(pd.Index([family
+                                                                 for family, i in family_dict.items()]))
+    precision_tab.to_csv(f"{base_path}/PrecisedResults/precision_data_e{20}_d{dim}_mPoints{best_silhouette_min_points}_eps{eps}.csv")
+    recalls = {}
+    for cluster in sorted(to_cycle):
+        i_cluster = f"cluster_{cluster}"
+        recall_list = [ct_labelled[i_cluster][family - 1] / sum(ct_labelled.iloc[family - 1])
+                       for family in family_dict.values()]
+        recalls.update({f"cluster_{cluster}": recall_list})
+    recall_tab = pd.DataFrame(recalls).set_index(pd.Index([family
+                                                           for family, i in family_dict.items()]))
+    recall_tab.to_csv(f"{base_path}/PrecisedResults/recall_data_e{20}_d{dim}_mPoints{best_silhouette_min_points}_eps{eps}.csv")
     end = time.time()
-    print(f"Took {end-start} seconds to perform task with {embedding_type} embedding")
+    print(f"Took {time.strftime('%H hour %M minutes %S seconds', time.gmtime(end-start))} seconds to perform task")
 
 
 if __name__ == "__main__":
