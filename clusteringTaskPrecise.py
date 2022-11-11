@@ -1,7 +1,7 @@
 import time
 import numpy as np
 import pandas as pd
-import fasttext
+#import fasttext
 from sklearn.cluster import DBSCAN
 from sklearn.metrics import silhouette_samples
 
@@ -66,6 +66,7 @@ def run(embedding_type="characters"):
     start = time.time()
     # COLLEZIONAMENTO DATI DAL DATASET
     dataset = pd.read_csv(f"{base_path}/datasets/bambenekBigrams.csv")
+    dataset = dataset[(dataset["family"] != "monerodownloader") & (dataset["family"] != "dyre")]
     dataset.reset_index(drop=True, inplace=True)
     domain_names = dataset[embedding_type].to_numpy()
     family_dict = {family: i for i, family in enumerate(sorted(set(dataset["family"])), 1)}
@@ -74,64 +75,64 @@ def run(embedding_type="characters"):
     family_label_column = dataset["family"]
     max_len = np.max([len(x.split()) for x in domain_names])
     print(f"Starting Clustering algorithm. No_samples={len(dataset)}")
-    eps = {4: 3.0, 5: 3.6}
-    min_Points_dict = {4: [189, 226], 5: [236, 283]}
-    for dim in range(4, 6):
-        model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", dim, 20, embedding_type)
-        dict_skipgram = getDict(model_skipgram)
-        embedded_domain_names = []
-        for name in domain_names:
-            sequences = np.array(
-                [dict_skipgram.get(token) if dict_skipgram.get(token) is not None else np.zeros(dim)
-                 for token in name.split()], dtype=np.single)
-            pad = np.zeros(dim * (max_len - len(name.split())), dtype=np.single)
-            embedded_domain_name = np.concatenate((sequences, pad), axis=None, dtype=np.single)
-            embedded_domain_names.append(embedded_domain_name)
-        for minPoints in min_Points_dict[dim]:
-            start_iteration = time.time()
-            db = DBSCAN(eps=eps[dim], min_samples=minPoints, metric="euclidean", algorithm='auto')
-            db.fit(embedded_domain_names)
-            # CALCOLO DELLE METRICHE PUNTUALI
-            labels = db.labels_
-            labels_pred_column = pd.Series(labels)
-            silhouettes = silhouette_samples(embedded_domain_names, labels, metric="euclidean")
-            silhouette_column = pd.Series(silhouettes)
-            results_silhouettes = pd.DataFrame({"family": family_label_column, "true_label": labels_true_column,
-                                                "pred_label": labels_pred_column, "silhouettes": silhouette_column})
-            results_silhouettes.to_csv(f"{base_path}/PrecisedResults/silhouettes_data_e{20}_d{dim}_mPoints{minPoints}.csv",
-                                       index=False)
-            # MATRICE DI CONFUSIONE
-            df = pd.DataFrame({'Labels': labels_true, 'Clusters': labels})
-            ct = pd.crosstab(df['Labels'], df['Clusters'])
-            ct_labelled = ct.set_index(pd.Index([family for family, i in family_dict.items()]))\
-                .rename(columns={i: f"cluster_{i}" if i != -1 else "cluster_noise" for i in ct.columns})
-            precisions = {}
-            ct_labelled.to_csv(f"{base_path}/PrecisedResults/confusion_matrix_e{20}_d{dim}_mPoints{minPoints}.csv")
-            # RECALL E PRECISION PER OGNI CLUSTER
-            to_cycle = set(labels)
-            to_cycle.remove(-1)
-            for cluster in sorted(to_cycle):
-                i_cluster = f"cluster_{cluster}"
-                precision_list = [ct_labelled[i_cluster][family]/sum(ct_labelled[i_cluster])
-                                  for family, i in family_dict.items()]
-                precisions.update({f"cluster_{cluster}": precision_list})
-            precision_tab = pd.DataFrame(precisions).set_index(pd.Index([family
-                                                                         for family, i in family_dict.items()]))
-            precision_tab.to_csv(f"{base_path}/PrecisedResults/precision_data_e{20}_d{dim}_mPoints{minPoints}.csv")
-            recalls = {}
-            for cluster in sorted(to_cycle):
-                i_cluster = f"cluster_{cluster}"
-                recall_list = [ct_labelled[i_cluster][family-1]/sum(ct_labelled.iloc[family-1])
-                               for family in family_dict.values()]
-                recalls.update({f"cluster_{cluster}": recall_list})
-            recall_tab = pd.DataFrame(recalls).set_index(pd.Index([family
-                                                                   for family, i in family_dict.items()]))
-            recall_tab.to_csv(f"{base_path}/PrecisedResults/recall_data_e{20}_d{dim}_mPoints{minPoints}.csv")
-            end_iteration = time.time()
-            # SCRITTURA DEI RISULTATI SU FILE
-            print()
-            print(f"Completed iteration in {time.strftime('%H hour %M minutes %S seconds', time.gmtime(end_iteration-start_iteration))}")
-            print(f"Iteration data: eps={eps[dim]}, minPoints={minPoints}, dim={dim} epochs={20}")
+    eps = 2.25
+    minPoints = 95
+    dim = 2
+    epoch = 20
+    model_skipgram = run_fasttext_training(basepath_train_data, "skipgram", dim, epoch, embedding_type)
+    dict_skipgram = getDict(model_skipgram)
+    embedded_domain_names = []
+    for name in domain_names:
+        sequences = np.array(
+            [dict_skipgram.get(token) if dict_skipgram.get(token) is not None else np.zeros(dim)
+             for token in name.split()], dtype=np.single)
+        pad = np.zeros(dim * (max_len - len(name.split())), dtype=np.single)
+        embedded_domain_name = np.concatenate((sequences, pad), axis=None, dtype=np.single)
+        embedded_domain_names.append(embedded_domain_name)
+    start_iteration = time.time()
+    db = DBSCAN(eps=eps, min_samples=minPoints, metric="euclidean", algorithm='auto')
+    db.fit(embedded_domain_names)
+    # CALCOLO DELLE METRICHE PUNTUALI
+    labels = db.labels_
+    labels_pred_column = pd.Series(labels)
+    silhouettes = silhouette_samples(embedded_domain_names, labels, metric="euclidean")
+    silhouette_column = pd.Series(silhouettes)
+    results_silhouettes = pd.DataFrame({"family": family_label_column, "true_label": labels_true_column,
+                                        "pred_label": labels_pred_column, "silhouettes": silhouette_column})
+    results_silhouettes.to_csv(f"{base_path}/PrecisedResults/silhouettes_data_e{epoch}_d{dim}_mPoints{minPoints}.csv",
+                               index=False)
+    # MATRICE DI CONFUSIONE
+    df = pd.DataFrame({'Labels': labels_true, 'Clusters': labels})
+    ct = pd.crosstab(df['Labels'], df['Clusters'])
+    ct_labelled = ct.set_index(pd.Index([family for family, i in family_dict.items()]))\
+        .rename(columns={i: f"cluster_{i}" if i != -1 else "cluster_noise" for i in ct.columns})
+    precisions = {}
+    ct_labelled.to_csv(f"{base_path}/PrecisedResults/confusion_matrix_e{20}_d{dim}_mPoints{minPoints}.csv")
+    # RECALL E PRECISION PER OGNI CLUSTER
+    to_cycle = set(labels)
+    to_cycle.remove(-1)
+    for cluster in sorted(to_cycle):
+        i_cluster = f"cluster_{cluster}"
+        precision_list = [ct_labelled[i_cluster][family]/sum(ct_labelled[i_cluster])
+                          for family, i in family_dict.items()]
+        precisions.update({f"cluster_{cluster}": precision_list})
+    precision_tab = pd.DataFrame(precisions).set_index(pd.Index([family
+                                                                 for family, i in family_dict.items()]))
+    precision_tab.to_csv(f"{base_path}/PrecisedResults/precision_data_e{epoch}_d{dim}_mPoints{minPoints}.csv")
+    recalls = {}
+    for cluster in sorted(to_cycle):
+        i_cluster = f"cluster_{cluster}"
+        recall_list = [ct_labelled[i_cluster][family-1]/sum(ct_labelled.iloc[family-1])
+                       for family in family_dict.values()]
+        recalls.update({f"cluster_{cluster}": recall_list})
+    recall_tab = pd.DataFrame(recalls).set_index(pd.Index([family
+                                                           for family, i in family_dict.items()]))
+    recall_tab.to_csv(f"{base_path}/PrecisedResults/recall_data_e{epoch}_d{dim}_mPoints{minPoints}.csv")
+    end_iteration = time.time()
+    # SCRITTURA DEI RISULTATI SU FILE
+    print()
+    print(f"Completed iteration in {time.strftime('%H hour %M minutes %S seconds', time.gmtime(end_iteration-start_iteration))}")
+    print(f"Iteration data: eps={eps}, minPoints={minPoints}, dim={dim} epochs={epoch}")
     end = time.time()
     print(f"Took {end-start} seconds to perform task with {embedding_type} embedding")
 
