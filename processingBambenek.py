@@ -3,10 +3,11 @@ import datasetWriter
 from datetime import date
 from getFamilies import get_families_distribution
 from pyspark.context import SparkContext
-from pyspark.sql.functions import lit, concat_ws, split, when, col
+from pyspark.sql.functions import transform, concat_ws, split, when, col
 from pyspark.sql.session import SparkSession
 from pyspark.sql import SQLContext
 from pyspark.sql.types import *
+from pyspark.ml.feature import NGram
 
 
 # se è gia esistente prende lo SparkContext, oppure lo crea
@@ -30,18 +31,20 @@ write_schema = StructType([
     StructField("family", StringType(), True)
 ])
 
+base_path = "/media/lorenzo/Partizione Dati/progettoBDA"
+
 # raccolta e ordinamento in una lista di tutti i nomi dei file del bambenek feed
-bambenek_feeds = os.listdir(f"{os.environ['HOME']}/progettoBDA/DGAFeed/")
+bambenek_feeds = os.listdir(f"{base_path}/DGAFeed/")
 bambenek_feeds.sort()
 
 # nel caso in cui sia già stato creato un feed e lo si voglia solo arricchire con altri feed di bambenek
 # raccolti si controlla se esiste il file dei metadati del feed e usando le informazioni presenti in esso si
 # stabiliscono quali sono i file da cui prendere i nomi da aggiungere. Se i metadati non esistono allora i file
 # da aggiungere sono tutti i file presenti nella cartella
-if os.path.exists(f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFeedMetadata.json"):
+if os.path.exists(f"{base_path}/Feed/bambenekFeedMetadata.json"):
     old_feeds = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(
-        f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFeed.csv")
-    metadata = datasetWriter.metadata_reader(f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFeedMetadata.json")
+        f"{base_path}/Feed/bambenekFeed.csv")
+    metadata = datasetWriter.metadata_reader(f"{base_path}/Feed/bambenekFeedMetadata.json")
     start = bambenek_feeds.index(metadata['last_feed'])
     feeds_to_add = bambenek_feeds[start+1:]
 else:
@@ -57,7 +60,7 @@ evil_feed = spark.createDataFrame([],schema)
 # mediante informazioni note e corrispondenze tra vari alias. Infine si ottiene  un dataframe che conterrà
 # tutti i domini da aggiungere al feed complessivo di cui riportiamo nome e famiglia
 for feed in feeds_to_add:
-    df = spark.read.format('csv').load(f"{os.environ['HOME']}/progettoBDA/DGAFeed/{feed}", schema=schema)
+    df = spark.read.format('csv').load(f"{base_path}/DGAFeed/{feed}", schema=schema)
     evil_feed = evil_feed.union(df.filter(df['description'].isNotNull()))
 evil_feed = evil_feed.withColumn("family", split(evil_feed['link'], '[/.]')[6])
 evil_feed = evil_feed.withColumn("family", when(col('family') == 'cl', 'cryptolocker')
@@ -72,21 +75,27 @@ evil_feed = evil_feed.dropDuplicates()
 # si eliminano dal dataframe dei nomi da aggiungere quelli già presenti nel feed complessivo
 evil_feed = evil_feed.subtract(old_feeds)
 
+evil_feed = evil_feed.select("family", split(concat_ws('', split("domain", '[.]')), '').alias("array_word"))
+bigrams = NGram(n=2, inputCol="array_word", outputCol="bigrams")
+evil_bigrams = bigrams.transform(evil_feed)
+evil_bigrams = evil_bigrams.select("family",
+                                    transform("bigrams",lambda x: concat_ws("", split(x, '[ ]'))).alias("bigrams"))
+
 # istruzioni per la scrittura dei nomi nel feed complessivo e per l'aggiornamento o eventuale
 # prima scrittura dei metadati sul file
 mode = 'a' if metadata else 'w'
-datasetWriter.dataset_writer(f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFeed.csv", evil_feed, mode)
+datasetWriter.dataset_writer(f"{base_path}/Feed/bambenekFeed.csv", evil_feed, mode)
 new_metadata = {"written": date.today().strftime("%Y-%m-%d"),
                 "last_feed": feeds_to_add[-1],
                 "num_domains": metadata['num_domains']+evil_feed.count() if metadata else evil_feed.count()}
-datasetWriter.metadata_writer(f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFeedMetadata.json",
+datasetWriter.metadata_writer(f"{base_path}/Feed/bambenekFeedMetadata.json",
                               new_metadata)
 # determinazione del numero di campioni per ogni famiglia rispetto al totale dei campioni
-family_distribution = get_families_distribution(spark, sqlContext, f"{os.environ['HOME']}/progettoBDA/Feed/bambenekFeed.csv")
+family_distribution = get_families_distribution(spark, sqlContext, f"{base_path}/Feed/bambenekFeed.csv")
 family_distribution.show(100)
 """
 ISTRUZIONI PER STUDIARE LE SOVRAPPOSIZIONI TRA I DOMINI DI ALCUNE FAMIGLIE
-old_feeds = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(f"{os.environ['HOME']}//progettoBDA/Feed/bambenekFeed.csv")
+old_feeds = spark.read.format("csv").option("delimiter", ",").option("header", "true").load(f"{base_path}/Feed/bambenekFeed.csv")
 old_feeds.createOrReplaceTempView('evil_feed')
 studio = sqlContext.sql("SELECT domain, concat(first(family), ' ' ,last(family)) as sovrapposizioni, COUNT(domain) FROM evil_feed GROUP BY domain HAVING COUNT(domain) >= 2")
 studio.createOrReplaceTempView('studio')

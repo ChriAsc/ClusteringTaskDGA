@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-base_path = "/media/lorenzo/Partizione Dati/progettoBDA/"
+base_path = "D:\progettoBDA\\"
 
 embedding_params = {
     "characters": (1, 1),
@@ -19,6 +19,24 @@ family_to_study = {
     2: ["dyre", "monerodownloader", "zeus-newgoz"],
     3: ["dyre", "monerodownloader", "bazarbackdoor", "zeus-newgoz"],
     4: ["monerodownloader", "bazarbackdoor", "zeus-newgoz"]
+}
+
+colors = {
+    2: np.array(['r', 'g']),
+    3: np.array(['r', 'g', 'b']),
+    4: np.array(['r', 'g', 'b', 'c'])
+}
+
+categories = {
+    2: [0, 1]*47,
+    3: [0, 1, 2]*47,
+    4: [0, 1, 2, 3]*47
+}
+
+steps = {
+    2: 3,
+    3: 4,
+    4: 4
 }
 
 def fasttextPreTrained(vecfile):
@@ -59,7 +77,11 @@ def run(embedding_type="characters"):
         for family in family_to_study[dim]:
             dataset_to_study = dataset[dataset["family"] == family]
             domain_names_to_study = dataset_to_study[embedding_type]
-            embedded_domain_names = []
+            if dim == 3:
+                lens = pd.DataFrame([len(x.split()) for x in domain_names_to_study])
+                sns.displot(lens)
+                plt.show()
+            """embedded_domain_names = []
             for name in domain_names_to_study:
                 sequences = np.array(
                     [dict_skipgram.get(token) if dict_skipgram.get(token) is not None else np.zeros(dim)
@@ -71,12 +93,20 @@ def run(embedding_type="characters"):
             np.set_printoptions(threshold=sys.maxsize)
             results[f"dim_{dim}"][family]["mean"] = np.mean(embedded_domain_names, axis=0).tolist()
             results[f"dim_{dim}"][family]["var"] = np.var(embedded_domain_names, axis=0).tolist()
-            results[f"dim_{dim}"][family]["std"] = np.std(embedded_domain_names, axis=0).tolist()
-    #plt.plot(results["dim_2"]["zeus-newgoz"]["mean"], 'ro')
-    plt.plot(results["dim_2"]["zeus-newgoz"]["var"], 'bo')
-    #plt.plot(np.add(results["dim_2"]["zeus-newgoz"]["std"], results["dim_2"]["zeus-newgoz"]["mean"]), 'go')
-    #plt.plot(np.add(np.negative(results["dim_2"]["zeus-newgoz"]["std"]), results["dim_2"]["zeus-newgoz"]["mean"]), 'bo')
-    plt.show()
+            shape = np.arange(len(results[f"dim_{dim}"][family]["var"]))
+            figure, axes = plt.subplots(2, 1)
+            figure.suptitle(f"{family} mean and variance with dimension {dim}", fontsize=25)
+            axes[0].scatter(shape, results[f"dim_{dim}"][family]["mean"],  c=colors[dim][categories[dim]])
+            axes[1].scatter(shape, results[f"dim_{dim}"][family]["var"],  c=colors[dim][categories[dim]])
+            axes[0].grid()
+            axes[1].grid()
+            axes[0].set_xticks(np.arange(0, dim*max_len+1, step=steps[dim]))
+            axes[1].set_xticks(np.arange(0, dim*max_len+1, step=steps[dim]))
+            axes[0].set_title("Mean")
+            axes[1].set_title("Variance")
+            figure.set_size_inches(30,20)
+            figure.savefig(f"{base_path}\Analisi\{family}_dim{dim}")
+            plt.clf()"""
 
 
 run("bigrams")
