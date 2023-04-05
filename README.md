@@ -476,8 +476,7 @@ clustering of domain names. This algorithm comprises three steps:
 
 Having defined the experimental setup and the series of experiments to be
 conducted, the designed algorithm was run for all the parameter values
-chosen, obtaining the results of the metrics presented in Figure 3 , Figure 4 ,
-
+chosen, obtaining the results of the metrics presented in Figure 3, Figure 4,
 Figure 5. The figures are heat maps in which blue represents the
 highest values, green the lowest, and grey boxes the missing values
 due to degenerate cases. Comparing the results obtained in the three figures for
@@ -553,13 +552,13 @@ identify some relevant phenomena observed in the experiments.
 
 Considering the first experiment, conducted with the parameter values
 free 𝑑𝑖𝑚= 4 ,𝑒𝑝𝑜𝑐ℎ𝑠= 20 ,𝑒𝑝𝑠= 3. 0 ,𝑚𝑖𝑛𝑃𝑜𝑖𝑛𝑡𝑠= 189 , we determined
-the clustering confusion matrix visible in Figure 9 , in which
+the clustering confusion matrix visible in Figure 9, in which
 six clusters are detected, in addition to the _cluster_noise_. The first important thing
 to emphasise is that all elements of the class " _bazarbackdoor_ " are
 isolated within the _cluster_ 5_.
 This means that the _cluster_5_ is representative of the class in question,
 as also evidenced by the high precision and recall values compared to the
-malware family _bazarbackdoor_ , visible in Figure 10 , and
+malware family _bazarbackdoor_ , visible in Figure 10, and
 in Figure 11. On the other hand, considering the _monerodownloader_ class, it can be seen
 that all elements are evenly distributed within the _cluster_1_ ,
 the _cluster_2_ , the _cluster_3_ and the _cluster_4_. These clusters contain mostly
@@ -593,7 +592,7 @@ _monerodownloader_ family are divided into several clusters. Unlike before, the
 domain names _monerodownloader_ are only divided into three clusters, namely
 _cluster_4_ , _cluster_3_ and _cluster_2_ , the latter of which has a cardinality
 greater cardinality than the other two. In fact, while the precision values are high
-for all three, as can be seen in Figure 13 , we can certainly see that the
+for all three, as can be seen in Figure 13, we can certainly see that the
 value of the _recall_ with respect to this family is much higher for the _cluster_2_ ,
 than the others, as shown in Figure 14. Unlike
 to the previous experiment, it can be seen that the _cluster_1_ is very homogeneous
@@ -616,7 +615,7 @@ identified goes from six to three.
 In detail, the _cluster_1_ contains almost all the elements of the _dyre_ family,
 resulting very homogeneous and complete with respect to the family, as
 demonstrated by the high values of _precision_ and _recall_ visible in Figure 16 and Figure 17.
-in Figure 17. Similarly, the _cluster_2_ is very representative of the
+Similarly, the _cluster_2_ is very representative of the
 family _monerodownloader_ , which was previously
 broken down into three different clusters. This cluster also absorbs all
 elements of other families such as _enviserv_ , _infy_ , _kingminer_ and
@@ -704,9 +703,9 @@ below.
 
 Considering the _dyre_ family, a regular trend of
 mean and variance, except for the first and last values. In detail, for
-dimension 2 (Figure 22 ), the variance of the first features (ca. 0.10) is higher than that of the second features (ca. 0.10).
+dimension 2 (Figure 22), the variance of the first features (ca. 0.10) is higher than that of the second features (ca. 0.10).
 higher than that of the second ones (about 0.02), and both remain stable.
-In the case of dimension 3 (Figure 23 ), some changes are noticeable; in
+In the case of dimension 3 (Figure 23), some changes are noticeable; in
 in particular, the variances of the first and second features settle
 on very similar values (around 0.05), while the third features have higher values
 (above 0.10), while all still maintaining a regularity.
@@ -721,12 +720,12 @@ However, as the size increases, the sparsity of the points increases and, as a
 consequently, segmentation worsens and a representative cluster cannot be identified.
 a representative cluster.The _monerodownloader_ family has a different behaviour, as
 in that a representative cluster is obtained at the
-dimension 2 (Figure 24 ), whereas in the other cases the samples are
+dimension 2 (Figure 24), whereas in the other cases the samples are
 distributed over several clusters. Considering the best segmentation, the
 mean and variance values of the first features are significantly higher
 than the second ones, but from the second half (after the 23rd feature) the values lose
 regularity. This phenomenon also occurs with dimension 3 (Figure
-25 ) and with dimension 4 (Figure 26 ), probably due to the
+25 ) and with dimension 4 (Figure 26), probably due to the
 great variability in word length. In fact, it has been seen that the
 domain of this family have four possible lengths, which is why
 which is why the relative points are distributed in four different clusters.
@@ -740,12 +739,12 @@ segmented with both dimension 3 and dimension 4, a totally different trend from 
 totally different trend from the previous cases. The mean and
 variance do not stabilise on one value, but change
 their value as the features change. Focusing our attention
-on dimension 3 (Figure 27 ), the averages of the first and third features
+on dimension 3 (Figure 27), the averages of the first and third features
 decrease with the same trend, while the average of the second
 is initially stable, then peaks towards 0, then
 decreases towards the values of the thirds (-1.0). Instead, all variances tend
 to 0, although outliers are present. With regard to
-dimension 4 (Figure 28 ), the averages of the first, third and fourth features
+dimension 4 (Figure 28), the averages of the first, third and fourth features
 are regular, although the last values vary the most. Instead, the
 average of the second features, although initially following the first, does not follow a regular
 regular trend, as there are always noticeable fluctuations.
@@ -768,10 +767,10 @@ are almost always categorised as noise. Therefore, this analysis aims to
 verify the presence of a different trend from those observed that
 justify this phenomenon. Indeed, the averages and variances do not
 settle on precise values, but have a certain periodicity. In the case of
-dimension 2 (Figure 29 ) and dimension 3 (Figure 30 ), the mean and
+dimension 2 (Figure 29) and dimension 3 (Figure 30), the mean and
 variance of the features have a wave-like trend until
 they begin to tend towards 0. As for dimension 4 (Figure
-31 ), we notice that the fourth feature (not present in the previous cases) has a
+31), we notice that the fourth feature (not present in the previous cases) has a
 more regular trend: the mean and variance values are stable
 (around 1.4 and 0.04 respectively), although the last values differ.
 Since the lengths of the domain names belonging to this family
@@ -791,7 +790,7 @@ After removing _bazarbackdoor_ , _dyre_ and _monerodownloader_ for the
 dimensions in which they were segmented correctly, we run
 the FastText training and clustering algorithm again. In the
 case where 𝑑𝑖𝑚= 2 , 𝑒𝑝𝑜𝑐ℎ𝑠= 20 , 𝑚𝑖𝑛𝑃𝑜𝑖𝑛𝑡𝑠= 95 ,𝑒𝑝𝑠= 2. 25 , only one cluster is
-only one cluster is identified (Figure 32 ). The _cluster_0_ includes samples
+only one cluster is identified (Figure 32). The _cluster_0_ includes samples
 from different families, some of which are quite numerous, such as _murofet_
 or _necurs_ , and others of small size, such as _vidro_ or _mirai_. Within the
 _cluster_noise_ are elements of several families, including _zeus-
@@ -800,7 +799,7 @@ identified cluster. In general, the values of _precision_ are low, while
 those of _recall_ vary according to the different families.
 
 Instead, with the configurations 𝑑𝑖𝑚= 3 , 𝑒𝑝𝑜𝑐ℎ𝑠= 20 ,
-𝑚𝑖𝑛𝑃𝑜𝑖𝑛𝑡𝑠= 142 ,𝑒𝑝𝑠= 2. 75 (Figure 33 ), the DBSCAN produces two clusters
+𝑚𝑖𝑛𝑃𝑜𝑖𝑛𝑡𝑠= 142 ,𝑒𝑝𝑠= 2. 75 (Figure 33), the DBSCAN produces two clusters
 ( _cluster_0_ and _cluster_1_ ). Within the first are samples
 from different families, similar to the previous case, and therefore
 the _precision_ of the individual families in this cluster is lowered
@@ -809,7 +808,7 @@ belonging to the _dyre_ class, however, this family is also present in the
 _noise_ cluster. In addition, many points from various families, including _zeus-
 newg
 In the case of 𝑑𝑖𝑚= 4 , 𝑒𝑝𝑜𝑐ℎ𝑠= 20 , 𝑚𝑖𝑛𝑃𝑜𝑖𝑛𝑡𝑠= 189 ,𝑒𝑝𝑠= 3. 0
-(Figure 34 ), there is only one cluster, as was the case for dimension
+(Figure 34), there is only one cluster, as was the case for dimension
 2, in which the same families as previously seen are present. One can
 underline the fact that the elements of the _dyre_ family are categorised
 as noise, in which other families are also included, similarly to the
