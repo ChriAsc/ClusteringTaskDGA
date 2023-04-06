@@ -5,8 +5,8 @@
 
 The great potential offered by the Internet is not without
 drawbacks and dangers. As the number of people
-connected to the network, the number of targets that an
-attacker can go to threaten. In fact, the number of attacks
+connected to the network increases, the number of targets that an
+attacker can threaten increases as well. In fact, the number of attacks
 in the last period has significantly increased, not only to machines
 private machines, but also to systems belonging to public and governmental bodies.
 This phenomenon has given hackers the opportunity to easily create
