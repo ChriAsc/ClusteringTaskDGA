@@ -869,4 +869,4 @@ found, it would mean that clustering is not a viable way forward.
 practicable. Indeed, a combination of parameters would be required for each family to be isolated and, consequently, the process would be
 too complex and not very adaptable to the appearance of new malware families in the future.
 
-#### _Disclaimer: images in the text refer to 'Relazione BDA.pdf' file_
+#### _Disclaimer: in-text images refer to 'Relazione BDA.pdf' file_
